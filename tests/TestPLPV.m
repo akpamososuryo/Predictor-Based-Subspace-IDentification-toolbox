@@ -40,7 +40,10 @@ classdef TestPLPV < matlab.unittest.TestCase
             end
 
             % Run PLPV preprocessor and state extraction
-            [S, Xcell, TT, Kcca] = pordvarx(u, y, mu, f, p, pind);
+            % [S, Xcell, TT, Kcca] = pordvarx(u, y, mu, f, p, pind);
+            
+            % Use Tikhonov regularization to avoid rank-deficient LS in regress.m
+            [S, Xcell, TT, Kcca] = pordvarx(u, y, mu, f, p, pind, 'tikh', 1e-2, 0);
 
             testCase.verifyNotEmpty(S);
             testCase.verifyNotEmpty(Xcell);
