@@ -69,13 +69,13 @@ end
 if (nargin < 10) || isempty(c)
     c = [0 0 0 0];
 end
-if (nargin < 8) || isempty(weight)
+if (nargin < 9) || isempty(weight)
     weight = 0;
 end
-if (nargin < 7) || isempty(opt)
+if (nargin < 8) || isempty(opt)
     opt = 'gcv';
 end
-if (nargin < 6) || isempty(reg)
+if (nargin < 7) || isempty(reg)
     reg = 'none';
 end
 
