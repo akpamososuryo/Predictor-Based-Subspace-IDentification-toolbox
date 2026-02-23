@@ -1,0 +1,16 @@
+# MATLAB autosave/backup
+*.asv
+*.m~
+
+# Compiled binaries
+*.mex*
+*.p
+
+# Simulink generated output
+**/slprj/
+**/sfprj/
+**/*.slxc
+
+# Test and coverage artifacts
+test-results/
+code-coverage/
