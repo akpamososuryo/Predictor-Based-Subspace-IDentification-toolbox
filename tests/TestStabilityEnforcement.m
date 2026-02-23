@@ -61,7 +61,7 @@ classdef TestStabilityEnforcement < matlab.unittest.TestCase
             x2 = dmodx(X2, n);
 
             try
-                [A2, B2, C2, D2] = testutils.callDx2abcd(x2, u2, y2, f, p, stableOpt)
+                [A2, B2, C2, D2] = testutils.callDx2abcd(x2, u2, y2, f, p, stableOpt);
             catch ME
                 testCase.assumeFail("Skipping near rank-deficient case: " + string(ME.message));
                 return
