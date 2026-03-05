@@ -16,6 +16,10 @@ Port `${input:function_name}` from MATLAB to Python.
 - Preserve MATLAB behavior first.
 - Keep implementation in `float64` unless test constraints require otherwise.
 - Add or update tests for shape checks and numeric parity.
+- Add a MATLAB fixture generator under `tests/+testutils/` when introducing a new parity fixture.
+- Ensure the MATLAB fixture file is present under `fixtures/matlab_reference/`.
+- Keep parity tests actionable: skip is allowed only when fixture generation is blocked, and must include
+  the exact MATLAB command needed to generate the fixture.
 - Report unsupported MATLAB-specific behavior explicitly.
 - Keep changes Ruff-compatible with project settings (`E`, `F`, `I`, `UP`, `B`, `SIM`) and Python 3.12 typing style.
 - Use `loadmat(..., squeeze_me=False)` for new parity fixtures, and normalize any 1D vectors to
@@ -30,6 +34,8 @@ Port `${input:function_name}` from MATLAB to Python.
 ## Deliverables
 - Python implementation.
 - Python tests using fixtures.
+- MATLAB fixture generator script (if new fixture is required).
+- Fixture-backed parity test with explicit tolerances and mismatch diagnostics.
 - Short parity report:
   - max abs error
   - max rel error
@@ -39,3 +45,4 @@ Port `${input:function_name}` from MATLAB to Python.
   - `ruff check .`
   - `python -m mypy --config-file pyproject.toml src tests`
   - `python -m pytest tests -q`
+  - `python -m pytest tests -q -m parity`

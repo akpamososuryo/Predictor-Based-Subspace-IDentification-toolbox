@@ -51,10 +51,17 @@ applyTo: "python/**/*.py"
 ## Output Validation
 - For each ported function, include fixture-based tests and tolerance checks.
 - Print concise diagnostics on mismatch: shape, norm error, failing slice.
+- Consider a function "parity-complete" only when all are present:
+	- MATLAB fixture generator in `tests/+testutils/`.
+	- MATLAB golden fixture in `fixtures/matlab_reference/`.
+	- Python parity test that executes against the fixture (not just a scaffolded skip path).
+- If fixture generation cannot be executed locally, keep an explicit `pytest.skip(...)` message with the
+	exact MATLAB command needed, and mark the parity item as pending.
 - Validate each port increment by running from `python/`:
 	- `ruff check .`
 	- `python -m mypy --config-file pyproject.toml src tests`
 	- `python -m pytest tests -q`
+	- `python -m pytest tests -q -m parity`
 
 ## Dependency Typing Notes
 - If third-party runtime dependencies are available but type stubs are not (for example `scipy.*`

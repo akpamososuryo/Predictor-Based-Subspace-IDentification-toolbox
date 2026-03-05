@@ -27,11 +27,18 @@ Port the MATLAB PBSID toolbox to Python with numerical-parity-first discipline.
 - Verify parity with tolerance-based comparisons, not bitwise equality.
 - Report max absolute and relative errors for each fixture.
 - When parity fails, explain whether the cause is algorithmic, numerical, or API mismatch.
+- Treat parity as incomplete until all three exist for the function being ported:
+	1) MATLAB fixture generator under `tests/+testutils/`,
+	2) MATLAB fixture file under `fixtures/matlab_reference/`,
+	3) Python parity test that runs against that fixture without skipping.
+- If fixture generation is blocked by tooling availability, keep an explicit skip with generation command,
+	and record this as a temporary gap (never silently treat it as done).
 
 ## Testing Policy
 - Add or update MATLAB tests to cover new branch paths before porting that path.
 - Add Python tests that consume the same fixtures and assert agreed tolerances.
 - Keep CI deterministic and platform-aware.
+- For every new Python port, include both functional unit tests and at least one fixture-based parity test.
 
 ## Python Style and Lint Policy
 - Keep Python changes compliant with `python/pyproject.toml` Ruff settings (`E`, `F`, `I`, `UP`, `B`, `SIM`).

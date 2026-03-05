@@ -29,6 +29,12 @@ This document describes the porting strategy for PBSID Toolbox from MATLAB to Py
 - Generate reference data in MATLAB (`.mat` files)
 - Compare Python outputs against MATLAB with < 1e-8 relative error
 - Store shared reference fixtures in `fixtures/matlab_reference/`
+- Treat parity as complete only when all are present for each ported function:
+	- MATLAB fixture generator in `tests/+testutils/`
+	- fixture file in `fixtures/matlab_reference/`
+	- Python parity test that runs against the fixture without skipping
+- If local MATLAB tooling is unavailable, keep parity tests with an explicit skip and generation command,
+	and track the fixture as a temporary gap.
 
 ## Python Tooling Baseline
 - Python package layout uses `python/src` and tests in `python/tests`.
@@ -49,4 +55,5 @@ This document describes the porting strategy for PBSID Toolbox from MATLAB to Py
 1. Port a single function (follow `order_varx.py` template)
 2. Create MATLAB reference data with debug variables
 3. Write unit tests comparing Python vs MATLAB
-4. Document any deviations in code comments
+4. Run parity marker tests (`python -m pytest tests -q -m parity`)
+5. Document any deviations in code comments
