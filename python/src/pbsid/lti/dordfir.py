@@ -9,6 +9,9 @@ type XOut = ArrayF64 | list[ArrayF64]
 
 def _as_2d_float64(x: object, name: str) -> ArrayF64:
     arr = np.asarray(x, dtype=np.float64)
+    if arr.ndim == 1:
+        # MATLAB fixture vectors loaded with squeeze_me=True become 1D arrays.
+        arr = arr[np.newaxis, :]
     if arr.ndim != 2:
         raise ValueError(f"DORDFIR expects '{name}' to be a 2D matrix.")
     return arr
