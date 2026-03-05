@@ -69,7 +69,7 @@ def dvar4abcdk(
     zps_arr = _as_2d_float64(zps, "zps")
 
     u_proj_arr = u_proj_arr[:n, :]
-    if (zps_arr.shape[1] // m) > p:
+    if (zps_arr.shape[1] / m) > p:
         zps_arr = zps_arr[:, : p * m]
 
     u_trim = u_arr[:, p : p + x_arr.shape[1]]
