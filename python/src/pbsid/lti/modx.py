@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from typing import TypeAlias, overload
+from collections.abc import Sequence
+from typing import overload
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
 ArrayF64 = NDArray[np.float64]
-BatchInput: TypeAlias = ArrayLike | list[ArrayLike] | tuple[ArrayLike, ...]
-BatchOutput: TypeAlias = ArrayF64 | list[ArrayF64]
 
 
 def _as_2d_float64(x: object) -> ArrayF64:
@@ -19,7 +18,7 @@ def _as_2d_float64(x: object) -> ArrayF64:
 
 
 @overload
-def modx(X: list[ArrayLike] | tuple[ArrayLike, ...], n: int) -> list[ArrayF64]:
+def modx(X: Sequence[ArrayLike], n: int) -> list[ArrayF64]:
     ...
 
 
@@ -28,7 +27,7 @@ def modx(X: ArrayLike, n: int) -> ArrayF64:
     ...
 
 
-def modx(X: BatchInput, n: int) -> BatchOutput:
+def modx(X: ArrayLike | Sequence[ArrayLike], n: int) -> ArrayF64 | list[ArrayF64]:
     """
     Estimate/truncate the state sequence to system order n.
 
