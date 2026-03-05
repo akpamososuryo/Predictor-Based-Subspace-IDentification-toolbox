@@ -28,6 +28,16 @@ Port the MATLAB PBSID toolbox to Python with numerical-parity-first discipline.
 - Add Python tests that consume the same fixtures and assert agreed tolerances.
 - Keep CI deterministic and platform-aware.
 
+## Python Style and Lint Policy
+- Keep Python changes compliant with `python/pyproject.toml` Ruff settings (`E`, `F`, `I`, `UP`, `B`, `SIM`).
+- Use Python 3.12 syntax and typing forms (for example `X | Y`, `list[str]`, `dict[str, float]`).
+- Keep line length at or below 100 characters and use double-quoted strings.
+- Prefer explicit, readable control flow that avoids common Ruff bugbear and simplification warnings.
+- Before finalizing a Python port change, run from `python/`:
+	- `ruff check .`
+	- `python -m mypy --config-file pyproject.toml src tests`
+	- `python -m pytest tests -q`
+
 ## Dependency Policy
 - Preferred stack: `numpy`, `scipy`, `python-control`, `slycot`, `pytest`.
 - For sparse/BPDN paths, use `cvxpy` where needed.

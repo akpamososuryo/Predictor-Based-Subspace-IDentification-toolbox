@@ -25,6 +25,14 @@ applyTo: "python/**/*.py"
 - Use Python 3.12 typing conventions (for example `X | Y` instead of `Union[X, Y]`).
 - Keep `src/` layout importability in mind when adding tests and type checks.
 - Do not configure deprecated NumPy mypy plugins.
+- Use built-in generics (`list`, `dict`, `tuple`) instead of `typing.List`-style aliases.
+- Keep imports sorted and free of unused symbols.
+
+## Ruff Compatibility
+- Ensure code passes project Ruff rules from `python/pyproject.toml` (`E`, `F`, `I`, `UP`, `B`, `SIM`).
+- Keep lines within 100 characters.
+- Prefer double-quoted string literals.
+- Avoid broad `# noqa` suppression; if unavoidable, scope it narrowly and justify it in code review notes.
 
 ## Error Handling
 - Raise clear exceptions for invalid dimensions and unsupported modes.
@@ -33,3 +41,7 @@ applyTo: "python/**/*.py"
 ## Output Validation
 - For each ported function, include fixture-based tests and tolerance checks.
 - Print concise diagnostics on mismatch: shape, norm error, failing slice.
+- Validate each port increment by running from `python/`:
+	- `ruff check .`
+	- `python -m mypy --config-file pyproject.toml src tests`
+	- `python -m pytest tests -q`

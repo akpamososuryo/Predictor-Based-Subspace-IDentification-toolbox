@@ -17,6 +17,7 @@ Port `${input:function_name}` from MATLAB to Python.
 - Keep implementation in `float64` unless test constraints require otherwise.
 - Add or update tests for shape checks and numeric parity.
 - Report unsupported MATLAB-specific behavior explicitly.
+- Keep changes Ruff-compatible with project settings (`E`, `F`, `I`, `UP`, `B`, `SIM`) and Python 3.12 typing style.
 
 ## Deliverables
 - Python implementation.
@@ -26,3 +27,7 @@ Port `${input:function_name}` from MATLAB to Python.
   - max rel error
   - branch coverage notes
   - remaining gaps
+- Validation summary from `python/`:
+  - `ruff check .`
+  - `python -m mypy --config-file pyproject.toml src tests`
+  - `python -m pytest tests -q`
