@@ -15,6 +15,11 @@ applyTo: "python/**/*.py"
 - Translate MATLAB 1-based indexing to Python 0-based indexing carefully.
 - Preserve matrix orientation expected by the algorithm.
 - Add assertions for expected shapes near function boundaries.
+- In parity tests, prefer `loadmat(..., squeeze_me=False)` so fixture dimensions are preserved.
+- Independently of fixture-loading style, coerce 1D arrays to 2D single-channel matrices before
+	strict shape checks at API boundaries.
+- Prefer a shared helper pattern (for example `_as_2d_float64`) in each module to keep this
+	behavior consistent.
 
 ## API Design
 - Keep function signatures close to MATLAB names during parity phase.

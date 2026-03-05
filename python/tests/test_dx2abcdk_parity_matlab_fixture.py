@@ -44,7 +44,7 @@ def test_dx2abcdk_parity_baseline_and_stable1_fixture() -> None:
             "Missing MATLAB fixture. Generate with: testutils.generateDx2abcdkFixture in MATLAB."
         )
 
-    m = loadmat(FIXTURE_PATH, squeeze_me=True, struct_as_record=False)
+    m = loadmat(FIXTURE_PATH, struct_as_record=False)
 
     x_base = np.asarray(m["x_base"], dtype=np.float64)
     u_base = np.asarray(m["u_base"], dtype=np.float64)

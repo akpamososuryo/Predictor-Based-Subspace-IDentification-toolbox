@@ -10,6 +10,9 @@ Port the MATLAB PBSID toolbox to Python with numerical-parity-first discipline.
 - Use `float64` for all core numeric paths unless a test requires otherwise.
 - Keep matrix shape conventions explicit at API boundaries.
 - Do not silently change defaults from MATLAB behavior.
+- Prefer `loadmat(..., squeeze_me=False)` in parity tests to preserve MATLAB shape metadata.
+- Still treat 1D arrays as valid single-channel data at Python API boundaries and normalize them
+	to 2D before strict shape checks.
 
 ## Porting Order
 1. LTI core: `dordvarx -> dmodx -> dx2abcdk`.
