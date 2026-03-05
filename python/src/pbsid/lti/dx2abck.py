@@ -7,8 +7,8 @@ from numpy.typing import ArrayLike, NDArray
 from scipy.linalg import eig, solve_discrete_are
 
 ArrayF64 = NDArray[np.float64]
-ABCD = tuple[ArrayF64, ArrayF64, ArrayF64, ArrayF64]
-ABCDK = tuple[ArrayF64, ArrayF64, ArrayF64, ArrayF64, ArrayF64]
+ABCK = tuple[ArrayF64, ArrayF64, ArrayF64, ArrayF64]
+ABC = tuple[ArrayF64, ArrayF64, ArrayF64]
 
 
 def _is_batch(x: object) -> bool:
@@ -18,10 +18,9 @@ def _is_batch(x: object) -> bool:
 def _as_2d_float64(x: object, name: str) -> ArrayF64:
     arr = np.asarray(x, dtype=np.float64)
     if arr.ndim == 1:
-        # MATLAB vectors may load from .mat as 1D arrays; treat as single-channel signals.
         arr = arr[np.newaxis, :]
     if arr.ndim != 2:
-        raise ValueError(f"DX2ABCDK expects '{name}' to be a 2D matrix.")
+        raise ValueError(f"DX2ABCK expects '{name}' to be a 2D matrix.")
     return arr
 
 
@@ -90,7 +89,7 @@ def _force_stable_a(
 
 
 @overload
-def dx2abcdk(
+def dx2abck(
     x: ArrayLike,
     u: ArrayLike | None,
     y: ArrayLike,
@@ -99,11 +98,11 @@ def dx2abcdk(
     c: str = "none",
     *,
     return_k: bool,
-) -> ABCDK: ...
+) -> ABCK: ...
 
 
 @overload
-def dx2abcdk(
+def dx2abck(
     x: ArrayLike,
     u: ArrayLike | None,
     y: ArrayLike,
@@ -112,10 +111,10 @@ def dx2abcdk(
     c: str = "none",
     *,
     return_k: bool = False,
-) -> ABCD: ...
+) -> ABC: ...
 
 
-def dx2abcdk(
+def dx2abck(
     x: ArrayLike | list[ArrayLike] | tuple[ArrayLike, ...],
     u: ArrayLike | list[ArrayLike] | tuple[ArrayLike, ...] | None,
     y: ArrayLike | list[ArrayLike] | tuple[ArrayLike, ...],
@@ -124,13 +123,10 @@ def dx2abcdk(
     c: str = "none",
     *,
     return_k: bool = False,
-) -> ABCD | ABCDK:
-    """Estimate A, B, C, D and optionally K from state/input/output sequences.
+) -> ABC | ABCK:
+    """Estimate A, B, C and optionally K from state/input/output sequences.
 
-    MATLAB parity target: ``dx2abcdk.m`` (single-dataset baseline path).
-
-        Supports baseline, stability-enforced A estimation (stable/stable1/stable2),
-        optional Riccati-based K estimation, and batch-list inputs.
+    MATLAB parity target: ``dx2abck.m``.
     """
     if c is None or c == "":
         c = "none"
@@ -144,7 +140,6 @@ def dx2abcdk(
             raise ValueError("For batch mode, x/u/y must all be list or tuple inputs.")
         y_batch = list(y)
         x_batch = list(x)
-        
         u_batch = [None] * len(y_batch) if u is None else list(u)
         if not (len(x_batch) == len(y_batch) == len(u_batch)):
             raise ValueError("Batch input lengths for x, u, and y must match.")
@@ -153,8 +148,8 @@ def dx2abcdk(
         x_batch = [x]
         u_batch = [u]
 
-    a = b = c_mat = d = k_mat = None
-    prev_abcdk: tuple[ArrayF64, ArrayF64, ArrayF64, ArrayF64, ArrayF64] | None = None
+    a = b = c_mat = k_mat = None
+    prev_abck: tuple[ArrayF64, ArrayF64, ArrayF64, ArrayF64] | None = None
     vw_prev: ArrayF64 | None = None
 
     for x_i, u_i, y_i in zip(x_batch, u_batch, y_batch, strict=True):
@@ -165,9 +160,9 @@ def dx2abcdk(
         l_out, n_samples = y_arr.shape
 
         if l_out == 0:
-            raise ValueError("DX2ABCDK requires an output vector y.")
+            raise ValueError("DX2ABCK requires an output vector y.")
         if n == 0:
-            raise ValueError("DX2ABCDK requires a state vector x.")
+            raise ValueError("DX2ABCK requires a state vector x.")
 
         if u_i is None:
             u_arr = np.zeros((0, n_samples), dtype=np.float64)
@@ -191,28 +186,24 @@ def dx2abcdk(
         u_t = u_arr[:, start:stop]
         y_t = y_arr[:, start:stop]
 
-        xu_prev = np.vstack((x_arr[:, :-1], u_t[:, :-1]))
-        if prev_abcdk is None:
-            cd = y_t[:, :-1] @ np.linalg.pinv(xu_prev)
+        if prev_abck is None:
+            c_mat = y_t @ np.linalg.pinv(x_arr)
         else:
-            _, _, c0, d0, _ = prev_abcdk
-            cd0 = np.hstack((c0, d0))
-            cd = cd0 + (y_t[:, :-1] - cd0 @ xu_prev) @ np.linalg.pinv(xu_prev)
+            _, _, c0, _ = prev_abck
+            c_mat = c0 + (y_t - c0 @ x_arr) @ np.linalg.pinv(x_arr)
 
-        e = y_t - cd @ np.vstack((x_arr, u_t))
+        e = y_t - c_mat @ x_arr
         z = np.vstack((x_arr[:, :-1], u_t[:, :-1], e[:, :-1]))
 
-        if prev_abcdk is None:
+        if prev_abck is None:
             abk = x_arr[:, 1:] @ np.linalg.pinv(z)
         else:
-            a0, b0, _, _, k0 = prev_abcdk
+            a0, b0, _, k0 = prev_abck
             abk0 = np.hstack((a0, b0, k0))
             abk = abk0 + (x_arr[:, 1:] - abk0 @ z) @ np.linalg.pinv(z)
 
         a = abk[:, :n]
         b = abk[:, n : n + r]
-        c_mat = cd[:, :n]
-        d = cd[:, n : n + r]
         k_mat = abk[:, n + r : n + r + l_out]
 
         if c_l in {"stable", "stable1", "stable2"} and np.max(np.abs(np.linalg.eigvals(a))) >= 1.0:
@@ -230,10 +221,10 @@ def dx2abcdk(
             )
 
             z_bk = np.vstack((u_t[:, :-1], e[:, :-1]))
-            if prev_abcdk is None:
+            if prev_abck is None:
                 bk = (x_arr[:, 1:] - a @ x_arr[:, :-1]) @ np.linalg.pinv(z_bk)
             else:
-                _, b0, _, _, k0 = prev_abcdk
+                _, b0, _, k0 = prev_abck
                 bk0 = np.hstack((b0, k0))
                 bk = bk0 + (x_arr[:, 1:] - a @ x_arr[:, :-1] - bk0 @ z_bk) @ np.linalg.pinv(z_bk)
 
@@ -241,7 +232,9 @@ def dx2abcdk(
             k_mat = bk[:, r : r + l_out]
 
         if return_k and c_l != "nostable":
-            lhs = np.block([[a, b], [c_mat, d]]) @ np.vstack((x_arr[:, :-1], u_t[:, :-1]))
+            lhs = np.block([[a, b], [c_mat, np.zeros((l_out, r), dtype=np.float64)]]) @ np.vstack(
+                (x_arr[:, :-1], u_t[:, :-1])
+            )
             vw = np.vstack((x_arr[:, 1:], y_t[:, :-1])) - lhs
 
             if vw_prev is not None:
@@ -259,16 +252,10 @@ def dx2abcdk(
             k_mat = np.linalg.solve(innovation_cov.T, gain_num.T).T
             vw_prev = vw
 
-        prev_abcdk = (a, b, c_mat, d, k_mat)
+        prev_abck = (a, b, c_mat, k_mat)
 
-    assert (
-        a is not None
-        and b is not None
-        and c_mat is not None
-        and d is not None
-        and k_mat is not None
-    )
+    assert a is not None and b is not None and c_mat is not None and k_mat is not None
 
     if return_k:
-        return a, b, c_mat, d, k_mat
-    return a, b, c_mat, d
+        return a, b, c_mat, k_mat
+    return a, b, c_mat
