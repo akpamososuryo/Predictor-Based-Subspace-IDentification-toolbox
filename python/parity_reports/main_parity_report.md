@@ -2,6 +2,9 @@
 
 | function | metric | n_rows | n_reports | mean_max_abs | std_dv_max_abs | mean_max_rel | std_dv_max_rel | mean_abs_over_atol | std_dv_abs_over_atol | mean_rel_over_rtol | std_dv_rel_over_rtol | pass_rate | severity_flag |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| dordfir | FIR | 6 | 1 | 4.434e-16 | 3.118e-16 | 8.070e-14 | 1.485e-13 | 4.434e-06 | 3.118e-06 | 8.070e-07 | 1.485e-06 | 1.000 | normal |
+| dordfir | S | 6 | 1 | 7.476e-15 | 7.212e-15 | 4.226e-15 | 1.301e-15 | 7.476e-05 | 7.212e-05 | 4.226e-08 | 1.301e-08 | 1.000 | normal |
+| dordfir | X | 6 | 1 | 2.277e-15 | 1.064e-15 | 1.637e-10 | 3.512e-10 | 2.277e-05 | 1.064e-05 | 1.637e-03 | 3.512e-03 | 1.000 | normal |
 | dordvarmax | S | 9 | 1 | 1.332e-10 | 2.357e-10 | 8.792e-05 | 1.394e-04 | 1.332e-01 | 2.357e-01 | 8.792e+01 | 1.394e+02 | 1.000 | normal |
 | dordvarmax | VARMAX_base_direct | 3 | 1 | 7.401e-13 | 9.150e-13 | 2.410e-09 | 2.351e-09 | 3.701e-05 | 4.575e-05 | 2.410e-04 | 2.351e-04 | 1.000 | normal |
 | dordvarmax | VARMAX_base_innovation | 3 | 1 | 3.201e-12 | 3.724e-12 | 2.358e-10 | 3.223e-10 | 1.601e-04 | 1.862e-04 | 2.358e-05 | 3.223e-05 | 1.000 | normal |
