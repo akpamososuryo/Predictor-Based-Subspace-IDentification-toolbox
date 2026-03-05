@@ -3,6 +3,16 @@
 ## Overview
 This document describes the porting strategy for PBSID Toolbox from MATLAB to Python.
 
+## Knowledge Map
+Use this index to decide where repo knowledge should be updated:
+- Porting policy and parity lessons: `PORTING.md` (this file)
+- Test and check commands: `running-tests.md`
+- Fixture schema and generator requirements: `fixtures/README.md`
+- Parity artifact interpretation: `python/parity_reports/README.md`
+
+When adding new guidance, update the source file above first, then add a short cross-reference
+in the related documents if needed.
+
 ## Porting Status
 - [x] `order_varx()` - Order estimation (CORE algorithm)
 - [ ] `modx()` - Model identification
@@ -57,6 +67,22 @@ For every new fixture-backed parity function, keep all three by default:
 2. Python parity test writes md/csv comparison output under `python/parity_reports/`.
 3. Tolerances are set from observed error envelopes and kept tight (looser stable-branch bounds require explicit rationale).
 
+### Fixture Debugging Lessons
+- Debug fixture pipeline issues separately from algorithm issues; a bad fixture can look like a bad port.
+- Prefer explicit variable assignment in MATLAB generators over dynamic `eval` naming where practical.
+- Keep backward-compatible aliases when evolving fixture schema (`*_c1` plus legacy single-case names).
+- Always load fixtures in parity tests with `loadmat(..., squeeze_me=False)` to preserve MATLAB shape metadata.
+- Enforce `n_cases >= 3` in Python parity tests and skip with an explicit MATLAB regeneration command when not met.
+- Use deterministic seeds and record them in fixture metadata (`meta.seeds`, `meta.n_cases`).
+- If absolute deltas look large, inspect scale-aware fields first before changing tolerances.
+
+### Fixture Debugging Checklist
+1. Verify generator output keys match Python test expectations exactly (including case suffixes).
+2. Verify shapes after load (`1D` vs `2D`, row-major sample orientation, transpose rules).
+3. Regenerate fixture and compare only one case/mode first to isolate schema vs numeric issues.
+4. Dump side-by-side values for failing matrices and include absolute and percent deltas.
+5. Re-run parity report generation and confirm hotspot summary aligns with observed failures.
+
 ## Python Tooling Baseline
 - Python package layout uses `python/src` and tests in `python/tests`.
 - Run Python commands from `python/` (recommended) so relative paths resolve consistently.
@@ -78,3 +104,4 @@ For every new fixture-backed parity function, keep all three by default:
 3. Write unit tests comparing Python vs MATLAB
 4. Run parity marker tests (`python -m pytest tests -q -m parity`)
 5. Document any deviations in code comments
+6. Update the appropriate knowledge file listed under `Knowledge Map`.

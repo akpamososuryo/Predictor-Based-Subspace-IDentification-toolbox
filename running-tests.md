@@ -1,5 +1,10 @@
 ## Running tests
 
+Knowledge references:
+- Porting and parity policy: `PORTING.md`
+- Fixture requirements: `fixtures/README.md`
+- Parity report interpretation: `python/parity_reports/README.md`
+
 Open MATLAB and set the Current Folder to the repository root (the folder that contains this `README.md`).
 
 Then run:
@@ -87,3 +92,5 @@ conda run -n pbsid-py python -m mypy --config-file python/pyproject.toml python/
 - Future fixture standard: every new fixture-backed parity test must enforce `n_cases >= 3`,
 	write md/csv reports via `write_parity_report`, and keep tolerances as tight as observed error
 	envelopes allow (document and justify any looser stable-branch thresholds).
+- If a guidance update is discovered while debugging tests, update `PORTING.md` first and add a short
+	cross-reference here only when it affects command usage or execution workflow.

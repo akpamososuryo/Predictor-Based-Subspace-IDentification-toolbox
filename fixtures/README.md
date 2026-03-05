@@ -2,6 +2,11 @@
 
 Shared cross-language fixtures live here.
 
+Related knowledge:
+- Porting/parity policy: `PORTING.md`
+- Test execution workflow: `running-tests.md`
+- Parity artifact interpretation: `python/parity_reports/README.md`
+
 ## Layout
 - `fixtures/matlab_reference/` for MATLAB-generated golden outputs
 - additional subfolders can be added per function family
@@ -22,3 +27,8 @@ Shared cross-language fixtures live here.
 - Future fixture rule: each new fixture-backed parity test should explicitly enforce `n_cases >= 3`
 	(and skip with generator command when not met), write md/csv parity reports, and keep tolerances
 	as tight as validated error margins permit.
+
+## Update Rule
+When fixture-specific debugging reveals a new reusable rule, add it here.
+If the rule is broader than fixtures (for example tolerance policy or parity process), add it to
+`PORTING.md` and keep a short fixture-focused note here.
