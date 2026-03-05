@@ -1,6 +1,6 @@
 ---
 description: "Use when selecting or modifying control-system and optimization dependencies for the Python port."
-applyTo: "**/*.py"
+applyTo: "python/**/*.py"
 ---
 
 # Control and Dependency Mapping

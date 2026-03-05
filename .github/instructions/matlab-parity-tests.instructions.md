@@ -1,6 +1,6 @@
 ---
 description: "Use when creating or updating MATLAB tests to ensure branch and mode coverage before Python porting."
-applyTo: "tests/**/*.m"
+applyTo: "matlab/tests/**/*.m"
 ---
 
 # MATLAB Parity Test Expansion

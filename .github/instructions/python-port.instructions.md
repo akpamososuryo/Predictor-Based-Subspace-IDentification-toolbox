@@ -1,6 +1,6 @@
 ---
 description: "Use when implementing or editing Python port code for PBSID parity with MATLAB."
-applyTo: "**/*.py"
+applyTo: "python/**/*.py"
 ---
 
 # Python Porting Rules
