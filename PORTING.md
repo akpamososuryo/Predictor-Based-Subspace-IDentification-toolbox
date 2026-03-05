@@ -28,7 +28,17 @@ This document describes the porting strategy for PBSID Toolbox from MATLAB to Py
 ## Testing Strategy
 - Generate reference data in MATLAB (`.mat` files)
 - Compare Python outputs against MATLAB with < 1e-8 relative error
-- See `pbsid_python/tests/fixtures/matlab_reference/` for reference data
+- Store shared reference fixtures in `fixtures/matlab_reference/`
+
+## Python Tooling Baseline
+- Python package layout uses `python/src` and tests in `python/tests`.
+- Run Python commands from `python/` (recommended) so relative paths resolve consistently.
+- Use Python 3.12 typing style (`X | Y`) for unions.
+- Use Ruff and mypy for static quality checks.
+
+### Type checking notes
+- For `src/` layout, configure mypy import roots via `mypy_path` in `python/pyproject.toml`.
+- Do not use deprecated NumPy mypy plugin (`numpy.typing.mypy_plugin`).
 
 ## Known Issues & Gotchas
 1. **Hankel matrix construction** - careful with slicing bounds

@@ -21,6 +21,11 @@ applyTo: "python/**/*.py"
 - Avoid premature object abstractions until fixture parity is stable.
 - Document any unavoidable deviations in docstrings under a "MATLAB parity note".
 
+## Typing and Static Analysis
+- Use Python 3.12 typing conventions (for example `X | Y` instead of `Union[X, Y]`).
+- Keep `src/` layout importability in mind when adding tests and type checks.
+- Do not configure deprecated NumPy mypy plugins.
+
 ## Error Handling
 - Raise clear exceptions for invalid dimensions and unsupported modes.
 - Do not auto-correct invalid user inputs silently.
