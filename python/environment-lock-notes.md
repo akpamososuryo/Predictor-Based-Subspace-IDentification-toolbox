@@ -1,0 +1,3 @@
+- Base env file: python/environment.yml
+- Python: 3.12 (chosen for full dependency compatibility incl. slycot/cvxpy)
+- If a package solve fails on a platform, retry with mamba and check conda-forge availability.
