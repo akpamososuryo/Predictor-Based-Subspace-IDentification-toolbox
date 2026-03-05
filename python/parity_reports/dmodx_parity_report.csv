@@ -1,0 +1,10 @@
+function,case,metric,max_abs,max_rel,atol,rtol,pass
+dmodx,single_c1,X,0.0,0.0,1e-12,1e-10,True
+dmodx,batch1_c1,X,0.0,0.0,1e-12,1e-10,True
+dmodx,batch2_c1,X,0.0,0.0,1e-12,1e-10,True
+dmodx,single_c2,X,0.0,0.0,1e-12,1e-10,True
+dmodx,batch1_c2,X,0.0,0.0,1e-12,1e-10,True
+dmodx,batch2_c2,X,0.0,0.0,1e-12,1e-10,True
+dmodx,single_c3,X,0.0,0.0,1e-12,1e-10,True
+dmodx,batch1_c3,X,0.0,0.0,1e-12,1e-10,True
+dmodx,batch2_c3,X,0.0,0.0,1e-12,1e-10,True

@@ -2,6 +2,7 @@
 
 | function | metric | n_rows | n_reports | mean_max_abs | std_dv_max_abs | mean_max_rel | std_dv_max_rel | mean_abs_over_atol | std_dv_abs_over_atol | mean_rel_over_rtol | std_dv_rel_over_rtol | pass_rate | severity_flag |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| dmodx | X | 9 | 1 | 0.000e+00 | 0.000e+00 | 0.000e+00 | 0.000e+00 | 0.000e+00 | 0.000e+00 | 0.000e+00 | 0.000e+00 | 1.000 | normal |
 | dordfir | FIR | 6 | 1 | 4.434e-16 | 3.118e-16 | 8.070e-14 | 1.485e-13 | 4.434e-06 | 3.118e-06 | 8.070e-07 | 1.485e-06 | 1.000 | normal |
 | dordfir | S | 6 | 1 | 7.476e-15 | 7.212e-15 | 4.226e-15 | 1.301e-15 | 7.476e-05 | 7.212e-05 | 4.226e-08 | 1.301e-08 | 1.000 | normal |
 | dordfir | X | 6 | 1 | 2.277e-15 | 1.064e-15 | 1.637e-10 | 3.512e-10 | 2.277e-05 | 1.064e-05 | 1.637e-03 | 3.512e-03 | 1.000 | normal |
