@@ -10,6 +10,8 @@ Port the MATLAB PBSID toolbox to Python with numerical-parity-first discipline.
 - Use `float64` for all core numeric paths unless a test requires otherwise.
 - Keep matrix shape conventions explicit at API boundaries.
 - Do not silently change defaults from MATLAB behavior.
+- During parity phase, do not add non-MATLAB heuristics (for example internal eigen re-ordering,
+	post-hoc covariance symmetrization, or custom optimizer defaults) unless MATLAB does the same.
 - Prefer `loadmat(..., squeeze_me=False)` in parity tests to preserve MATLAB shape metadata.
 - Still treat 1D arrays as valid single-channel data at Python API boundaries and normalize them
 	to 2D before strict shape checks.
@@ -27,6 +29,7 @@ Port the MATLAB PBSID toolbox to Python with numerical-parity-first discipline.
 - Verify parity with tolerance-based comparisons, not bitwise equality.
 - Report max absolute and relative errors for each fixture.
 - When parity fails, explain whether the cause is algorithmic, numerical, or API mismatch.
+- Do not reduce tolerances to hide algorithmic/API mismatch; fix implementation first.
 - Treat parity as incomplete until all three exist for the function being ported:
 	1) MATLAB fixture generator under `tests/+testutils/`,
 	2) MATLAB fixture file under `fixtures/matlab_reference/`,
@@ -39,6 +42,8 @@ Port the MATLAB PBSID toolbox to Python with numerical-parity-first discipline.
 - Add Python tests that consume the same fixtures and assert agreed tolerances.
 - Keep CI deterministic and platform-aware.
 - For every new Python port, include both functional unit tests and at least one fixture-based parity test.
+- On Windows, if direct interpreter calls fail due environment/DLL startup issues, use
+	`conda run -n <env> ...` for parity and lint/type checks.
 
 ## Python Style and Lint Policy
 - Keep Python changes compliant with `python/pyproject.toml` Ruff settings (`E`, `F`, `I`, `UP`, `B`, `SIM`).

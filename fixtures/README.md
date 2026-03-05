@@ -8,9 +8,17 @@ Shared cross-language fixtures live here.
 
 ## Requirements
 - Fixtures must be deterministic.
+- For parity confidence, each fixture should include at least 3 deterministic datasets per case/mode.
 - Include metadata for seed, dimensions, and algorithm mode.
 - Use fixtures for MATLAB-to-Python parity tests.
 - Each new fixture should have a paired MATLAB generator script in `tests/+testutils/`.
 - Fixture-backed Python parity tests should reference these files directly and avoid silent skips.
 - If fixture generation is blocked by missing tooling, tests must skip explicitly and state the exact
 	MATLAB command required to generate the fixture.
+- Parity tolerances should reflect expected numeric differences, not hide algorithm mismatches.
+- When fixture parity fails, record max absolute and relative error and fix implementation before
+	considering tolerance changes.
+- Python parity tests generate CSV/Markdown comparison tables under `python/parity_reports/`.
+- Future fixture rule: each new fixture-backed parity test should explicitly enforce `n_cases >= 3`
+	(and skip with generator command when not met), write md/csv parity reports, and keep tolerances
+	as tight as validated error margins permit.

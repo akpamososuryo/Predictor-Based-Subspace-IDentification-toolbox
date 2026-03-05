@@ -36,6 +36,27 @@ This document describes the porting strategy for PBSID Toolbox from MATLAB to Py
 - If local MATLAB tooling is unavailable, keep parity tests with an explicit skip and generation command,
 	and track the fixture as a temporary gap.
 
+## Parity-First Lessons Learned
+- During parity phase, implement MATLAB behavior exactly before any cleanup or stabilization.
+- Do not introduce heuristic behavior changes (for example eigenvalue re-ordering in Jacobian loops,
+	post-hoc covariance symmetrization, or custom optimizer tolerances) unless MATLAB does the same.
+- If parity fails, do not loosen tolerances as a first response. Treat tolerance changes as a last resort and
+	record the algorithmic reason.
+- For sensitive routines, compare Python code line-by-line against the MATLAB public function and any
+	called private helper (for example `private/exls.m`, `private/jacobianest.m`).
+
+### Parity Debugging Checklist
+1. Confirm column/row major semantics match MATLAB (`A(:)`, `reshape`, block indexing).
+2. Confirm helper-function behavior matches MATLAB defaults (for example optimizer tolerances).
+3. Reproduce mismatch with fixture and report max absolute/relative errors and failing index.
+4. Fix implementation first; only then revisit tolerances if required by unavoidable numeric differences.
+
+### Future Fixture Rule
+For every new fixture-backed parity function, keep all three by default:
+1. MATLAB fixture generator emits at least 3 deterministic datasets per case/mode (`n_cases >= 3`).
+2. Python parity test writes md/csv comparison output under `python/parity_reports/`.
+3. Tolerances are set from observed error envelopes and kept tight (looser stable-branch bounds require explicit rationale).
+
 ## Python Tooling Baseline
 - Python package layout uses `python/src` and tests in `python/tests`.
 - Run Python commands from `python/` (recommended) so relative paths resolve consistently.

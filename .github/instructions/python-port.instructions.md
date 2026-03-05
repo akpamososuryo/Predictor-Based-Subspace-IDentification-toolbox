@@ -10,6 +10,8 @@ applyTo: "python/**/*.py"
 - Match MATLAB linear algebra intent first, then optimize.
 - Use `numpy.linalg.pinv` when MATLAB path uses pseudoinverse semantics.
 - Be explicit about transposes because MATLAB and NumPy row/column defaults differ.
+- During parity phase, keep MATLAB helper/default behavior intact (for example optimizer tolerances,
+	ordering behavior) before attempting robustness tweaks.
 
 ## Index and Shape Translation
 - Translate MATLAB 1-based indexing to Python 0-based indexing carefully.
@@ -51,6 +53,9 @@ applyTo: "python/**/*.py"
 ## Output Validation
 - For each ported function, include fixture-based tests and tolerance checks.
 - Print concise diagnostics on mismatch: shape, norm error, failing slice.
+- Do not lower tolerances to hide mismatches caused by implementation drift.
+- When mismatch occurs, compare against MATLAB function and relevant `private/*.m` helpers line-by-line
+	before changing tolerance thresholds.
 - Consider a function "parity-complete" only when all are present:
 	- MATLAB fixture generator in `tests/+testutils/`.
 	- MATLAB golden fixture in `fixtures/matlab_reference/`.

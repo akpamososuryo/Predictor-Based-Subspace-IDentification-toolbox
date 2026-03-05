@@ -4,6 +4,7 @@ from typing import cast
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
+from scipy.optimize import fminbound
 
 type ArrayF64 = NDArray[np.float64]
 type XOut = ArrayF64 | list[ArrayF64]
@@ -24,16 +25,75 @@ def _ensure_row_major_samples(arr: ArrayF64) -> ArrayF64:
     return arr
 
 
-def _exls_none(
+def _eval_varmax(
+    y: ArrayF64,
+    z: ArrayF64,
+    p: int,
+    r: int,
+    varmax: ArrayF64,
+) -> ArrayF64:
+    l_out = y.shape[0]
+    m = r + 2 * l_out
+    n_total = y.shape[1] + p
+
+    z_work = z.copy()
+    e_full = np.zeros((l_out, n_total), dtype=np.float64)
+    h_blocks: list[ArrayF64] = []
+    for i in range(1, p + 1):
+        row0 = (i - 1) * m + r + l_out
+        row1 = i * m
+        z_work[row0:row1, :] = e_full[:, i - 1 : n_total + i - p - 1]
+        h_blocks.append(varmax[:, row0:row1])
+
+    e = y - varmax @ z_work
+    e_f = e.copy()
+    for t in range(e.shape[1]):
+        for i in range(1, p + 1):
+            if t - i >= 0:
+                # MATLAB eval_varmax builds an FIR polynomial H(q^-1) and filters raw residuals E.
+                e_f[:, t] = e_f[:, t] - h_blocks[i - 1] @ e[:, t - i]
+    return e_f
+
+
+def _rls_ew_track(
+    z_col: ArrayF64,
+    y_col: ArrayF64,
+    theta: ArrayF64,
+    p_mat: ArrayF64,
+    lamb: float,
+) -> tuple[ArrayF64, ArrayF64]:
+    denom = lamb + z_col.T @ p_mat @ z_col
+    p_next = (1.0 / lamb) * (p_mat - (p_mat @ np.outer(z_col, z_col) @ p_mat) / denom)
+    p_next = 0.5 * (p_next + p_next.T)
+    e = y_col - theta @ z_col
+    theta_next = theta + np.outer(e, z_col) @ p_next
+    return theta_next, p_next
+
+
+def _gradient_obj(
+    x: float,
+    *,
+    y: ArrayF64,
+    z: ArrayF64,
+    p: int,
+    r: int,
+    n: int,
+    varmax: ArrayF64,
+    direction: ArrayF64,
+) -> float:
+    e_x = _eval_varmax(y, z, p, r, varmax + x * direction)
+    return float(np.linalg.norm(e_x.T, ord="fro") ** 2) / float(n)
+
+
+def _exls_reg_none(
     y: ArrayF64,
     z: ArrayF64,
     p: int,
     r: int,
     tol: float,
+    method: str,
     varmax0: ArrayF64 | None = None,
-    maxit: int = 25,
 ) -> tuple[ArrayF64, ArrayF64]:
-    """Approximate EXLS whitening loop for reg='none'."""
     n = y.shape[1] + p
     l_out = y.shape[0]
     m = r + 2 * l_out
@@ -41,24 +101,101 @@ def _exls_none(
     varmax = np.zeros((l_out, z.shape[0]), dtype=np.float64) if varmax0 is None else varmax0.copy()
     cost_prev = 1e10
 
-    for _ in range(maxit):
-        e = y - varmax @ z
-        cost = float(np.linalg.norm(e.T, ord="fro") ** 2)
-        if abs(cost_prev - cost) <= (tol**2) * n:
-            break
+    method_l = method.lower()
+    if method_l in {"grad", "gradient"}:
+        lamb = 1.0
+        maxit = 100
+        k = 1
+        while k <= maxit:
+            e = _eval_varmax(y, z, p, r, varmax)
+            cost = float(np.linalg.norm(e.T, ord="fro") ** 2)
+            converged = abs(cost_prev - cost) <= (tol**2) * n
 
-        e_full = np.zeros((l_out, n), dtype=np.float64)
-        e_full[:, p:n] = e
-        for i in range(1, p + 1):
-            row0 = (i - 1) * m + r + l_out
-            row1 = i * m
-            z[row0:row1, :] = e_full[:, i - 1 : n + i - p - 1]
+            e_full = np.zeros((l_out, n), dtype=np.float64)
+            e_full[:, p:n] = e
+            for i in range(1, p + 1):
+                row0 = (i - 1) * m + r + l_out
+                row1 = i * m
+                z[row0:row1, :] = e_full[:, i - 1 : n + i - p - 1]
 
-        zps = np.asarray(np.linalg.pinv(z), dtype=np.float64)
-        varmax = y @ zps
-        cost_prev = cost
+            direction = e @ z.T
 
-    return varmax, z
+            def objective(
+                x: float,
+                y_: ArrayF64 = y,
+                z_: ArrayF64 = z,
+                p_: int = p,
+                r_: int = r,
+                n_: int = n,
+                varmax_: ArrayF64 = varmax,
+                direction_: ArrayF64 = direction,
+            ) -> float:
+                return _gradient_obj(
+                    x,
+                    y=y_,
+                    z=z_,
+                    p=p_,
+                    r=r_,
+                    n=n_,
+                    varmax=varmax_,
+                    direction=direction_,
+                )
+
+            lamb = float(fminbound(objective, 0.0, lamb, xtol=1e-4, maxfun=500))
+            varmax = varmax + lamb * direction
+
+            cost_prev = cost
+            k += 1
+            if converged:
+                break
+
+        return varmax, z
+
+    if method_l == "els":
+        ireg = np.sqrt(tol)
+        p_scalar = ireg
+        lamb = tol ** (1.0 / n)
+        maxit = 10
+        k = 1
+        p0 = p_scalar
+
+        while k <= maxit:
+            p_current = np.eye(z.shape[0], dtype=np.float64) / p0
+
+            for i_col in range(n - p):
+                varmax, p_current = _rls_ew_track(
+                    z[:, i_col], y[:, i_col], varmax, p_current, lamb
+                )
+                e_col = y[:, i_col] - varmax @ z[:, i_col]
+
+                if i_col != (n - p - 1):
+                    for j in range(l_out):
+                        for blk in range(0, p - 1):
+                            dst = blk * m + r + l_out + j
+                            src = (blk + 1) * m + r + l_out + j
+                            z[dst, i_col + 1] = z[src, i_col]
+                        z[(p - 1) * m + r + l_out + j, i_col + 1] = e_col[j]
+
+            e = y - varmax @ z
+            cost = float(np.linalg.norm(e.T, ord="fro") ** 2)
+            converged = abs(cost_prev - cost) <= (tol**2) * n
+
+            e_full = np.zeros((l_out, n), dtype=np.float64)
+            e_full[:, p:n] = e
+            for i in range(1, p + 1):
+                row0 = (i - 1) * m + r + l_out
+                row1 = i * m
+                z[row0:row1, :] = e_full[:, i - 1 : n + i - p - 1]
+
+            k += 1
+            lamb = (lamb**n) ** (1.0 / (k * n))
+            cost_prev = cost
+            if converged:
+                break
+
+        return varmax, z
+
+    raise ValueError("Unknown DORDVARMAX method.")
 
 
 def dordvarmax(
@@ -149,7 +286,7 @@ def dordvarmax(
         if not no_d_flag:
             z = np.vstack((z, u_reg))
 
-        varmax, z = _exls_none(y_reg, z, p, r, tol, varmax0=varmax)
+        varmax, z = _exls_reg_none(y_reg, z, p, r, tol, method_l, varmax0=varmax)
         zz.append(z)
 
     assert varmax is not None
@@ -178,7 +315,7 @@ def dordvarmax(
                 for j in range(0, i):
                     j0 = j * l0
                     j1 = (j + 1) * l0
-                    idx0 = (p - i + j) * m0 + r0 + l0
+                    idx0 = (p - i + j) * m0 + r0
                     idx1 = idx0 + l0
                     lk[row0:row1, :] = lk[row0:row1, :] + varmax[:, idx0:idx1] @ lk[j0:j1, :]
 

@@ -8,6 +8,7 @@ from scipy.io import loadmat
 from scipy.optimize import linear_sum_assignment
 
 from pbsid.lti.dvar2eig import dvar2eig
+from pbsid.parity_report_utils import write_parity_report
 
 FIXTURE_PATH = (
     Path(__file__).resolve().parents[2] / "fixtures" / "matlab_reference" / "dvar2eig_fixture.mat"
@@ -49,27 +50,65 @@ def test_dvar2eig_parity_fixture() -> None:
 
     m = loadmat(FIXTURE_PATH, squeeze_me=False, struct_as_record=False)
 
-    a = np.asarray(m["A"], dtype=np.float64)
-    p = np.asarray(m["P"], dtype=np.float64)
+    n_cases = int(np.asarray(m.get("n_cases", [[1]])).item())
+    if n_cases < 3:
+        pytest.skip(
+            "Fixture has fewer than 3 cases. Regenerate with: testutils.generateDvar2eigFixture"
+        )
 
-    e_py, cov_e_py = dvar2eig(p, a)
-    e_ref = np.asarray(m["E"]).reshape(-1)
-    cov_e_ref = np.asarray(m["covE"], dtype=np.float64)
+    rows: list[dict[str, str | float | int | bool]] = []
 
-    e_aligned, cov_e_aligned = _align_covariance_order(e_py, cov_e_py, e_ref)
+    for i in range(n_cases):
+        case_label = f"case_{i + 1}"
+        a = np.asarray(m["A_cases"][..., i], dtype=np.float64)
+        p = np.asarray(m["P_cases"][..., i], dtype=np.float64)
 
-    # Compare sorted eigenvalues to decouple any residual ordering ambiguity.
-    e_py_sorted = np.sort_complex(e_aligned)
-    e_ref_sorted = np.sort_complex(e_ref)
+        e_py, cov_e_py = dvar2eig(p, a)
+        e_ref = np.asarray(m["E_cases"][..., i]).reshape(-1)
+        cov_e_ref = np.asarray(m["covE_cases"][..., i], dtype=np.float64)
 
-    max_abs_e, max_rel_e = _max_abs_rel(e_py_sorted, e_ref_sorted)
-    assert np.allclose(e_py_sorted, e_ref_sorted, atol=1e-8, rtol=1e-6), (
-        f"E mismatch: max_abs={max_abs_e:.3e}, max_rel={max_rel_e:.3e}, "
-        f"shape_got={e_py_sorted.shape}, shape_ref={e_ref_sorted.shape}"
-    )
+        e_aligned, cov_e_aligned = _align_covariance_order(e_py, cov_e_py, e_ref)
 
-    max_abs_cov, max_rel_cov = _max_abs_rel(cov_e_aligned, cov_e_ref)
-    assert np.allclose(cov_e_aligned, cov_e_ref, atol=2e-5, rtol=2e-3), (
-        f"covE mismatch: max_abs={max_abs_cov:.3e}, max_rel={max_rel_cov:.3e}, "
-        f"shape_got={cov_e_aligned.shape}, shape_ref={cov_e_ref.shape}"
-    )
+        # Compare sorted eigenvalues to decouple any residual ordering ambiguity.
+        e_py_sorted = np.sort_complex(e_aligned)
+        e_ref_sorted = np.sort_complex(e_ref)
+
+        max_abs_e, max_rel_e = _max_abs_rel(e_py_sorted, e_ref_sorted)
+        e_ok = np.allclose(e_py_sorted, e_ref_sorted, atol=1e-12, rtol=1e-9)
+        rows.append(
+            {
+                "function": "dvar2eig",
+                "case": case_label,
+                "metric": "E",
+                "max_abs": max_abs_e,
+                "max_rel": max_rel_e,
+                "atol": 1e-12,
+                "rtol": 1e-9,
+                "pass": bool(e_ok),
+            }
+        )
+        assert e_ok, (
+            f"E {case_label} mismatch: max_abs={max_abs_e:.3e}, max_rel={max_rel_e:.3e}, "
+            f"shape_got={e_py_sorted.shape}, shape_ref={e_ref_sorted.shape}"
+        )
+
+        max_abs_cov, max_rel_cov = _max_abs_rel(cov_e_aligned, cov_e_ref)
+        cov_ok = np.allclose(cov_e_aligned, cov_e_ref, atol=1e-12, rtol=1e-9)
+        rows.append(
+            {
+                "function": "dvar2eig",
+                "case": case_label,
+                "metric": "covE",
+                "max_abs": max_abs_cov,
+                "max_rel": max_rel_cov,
+                "atol": 1e-12,
+                "rtol": 1e-9,
+                "pass": bool(cov_ok),
+            }
+        )
+        assert cov_ok, (
+            f"covE {case_label} mismatch: max_abs={max_abs_cov:.3e}, max_rel={max_rel_cov:.3e}, "
+            f"shape_got={cov_e_aligned.shape}, shape_ref={cov_e_ref.shape}"
+        )
+
+    write_parity_report("dvar2eig_parity_report", rows)
