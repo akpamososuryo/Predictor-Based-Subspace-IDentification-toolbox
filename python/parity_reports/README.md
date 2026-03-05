@@ -20,6 +20,7 @@ Current report names include:
 - `dvar2eig_parity_report`
 - `dordvarmax_parity_report`
 - `dordfir_parity_report`
+- `dmodx_parity_report`
 - `dvar2frd_varx_parity_report`
 - `dvar2frd_abck_parity_report`
 - `dvar2frd_abcdk_parity_report`
@@ -94,6 +95,7 @@ If tests skip because fixture case count is too small, regenerate MATLAB fixture
 ```matlab
 testutils.generateDvar2eigFixture
 testutils.generateDordvarmaxFixture
+testutils.generateDmodxFixture
 testutils.generateDvar2frdFixture
 testutils.generateDordvarxFixture
 testutils.generateDx2abcdkFixture

@@ -47,6 +47,7 @@ Parity fixture expectation:
 testutils.generateDvar2eigFixture
 testutils.generateDordvarmaxFixture
 testutils.generateDordfirFixture
+testutils.generateDmodxFixture
 testutils.generateDvar2frdFixture
 testutils.generateDordvarxFixture
 testutils.generateDx2abcdkFixture
