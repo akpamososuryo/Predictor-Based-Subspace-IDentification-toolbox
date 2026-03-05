@@ -50,6 +50,7 @@ testutils.generateDordfirFixture
 testutils.generateDmodxFixture
 testutils.generateDx2abcFixture
 testutils.generateDx2abcdFixture
+testutils.generateDvar4varxFixture
 testutils.generateDvar2frdFixture
 testutils.generateDordvarxFixture
 testutils.generateDx2abcdkFixture
