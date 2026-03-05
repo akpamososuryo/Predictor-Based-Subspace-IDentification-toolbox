@@ -48,6 +48,7 @@ testutils.generateDvar2eigFixture
 testutils.generateDordvarmaxFixture
 testutils.generateDordfirFixture
 testutils.generateDmodxFixture
+testutils.generateDx2abcFixture
 testutils.generateDx2abcdFixture
 testutils.generateDvar2frdFixture
 testutils.generateDordvarxFixture
