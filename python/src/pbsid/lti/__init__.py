@@ -1,6 +1,9 @@
 from .dmodx import dmodx
 from .dordfir import dordfir
+from .dordvarmax import dordvarmax
 from .dordvarx import dordvarx
+from .dvar2eig import dvar2eig
+from .dvar2frd import dvar2frd
 from .dvar4abcdk import dvar4abcdk
 from .dvar4abck import dvar4abck
 from .dvar4varx import dvar4varx
@@ -13,7 +16,10 @@ from .modx import modx
 __all__ = [
 	"dmodx",
 	"dordfir",
+	"dordvarmax",
 	"dordvarx",
+	"dvar2eig",
+	"dvar2frd",
 	"dvar4abcdk",
 	"dvar4abck",
 	"dvar4varx",
