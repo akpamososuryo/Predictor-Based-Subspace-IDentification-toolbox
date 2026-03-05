@@ -24,6 +24,7 @@ Current report names include:
 - `dx2abc_parity_report`
 - `dx2abcd_parity_report`
 - `dvar4varx_parity_report`
+- `dvar4abck_parity_report`
 - `dvar2frd_varx_parity_report`
 - `dvar2frd_abck_parity_report`
 - `dvar2frd_abcdk_parity_report`
@@ -102,6 +103,7 @@ testutils.generateDmodxFixture
 testutils.generateDx2abcFixture
 testutils.generateDx2abcdFixture
 testutils.generateDvar4varxFixture
+testutils.generateDvar4abckFixture
 testutils.generateDvar2frdFixture
 testutils.generateDordvarxFixture
 testutils.generateDx2abcdkFixture
