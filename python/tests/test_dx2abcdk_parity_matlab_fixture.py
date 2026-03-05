@@ -69,8 +69,18 @@ def test_dx2abcdk_parity_baseline_and_stable1_fixture() -> None:
     a1, b1, c1, d1, k1 = dx2abcdk(x_s1, u_s1, y_s1, f_s1, p_s1, c="stable1", return_k=True)
 
     # Stable-branch parity is more sensitive to numerical details; use slightly looser tolerances.
-    _assert_close("A_stable1", a1, np.asarray(m["A_stable1"], dtype=np.float64), atol=5e-3, rtol=1e-4)
-    _assert_close("B_stable1", b1, np.asarray(m["B_stable1"], dtype=np.float64), atol=5e-3, rtol=1e-4)
-    _assert_close("C_stable1", c1, np.asarray(m["C_stable1"], dtype=np.float64), atol=5e-3, rtol=1e-4)
-    _assert_close("D_stable1", d1, np.asarray(m["D_stable1"], dtype=np.float64), atol=5e-3, rtol=1e-4)
-    _assert_close("K_stable1", k1, np.asarray(m["K_stable1"], dtype=np.float64), atol=5e-3, rtol=1e-3)
+    _assert_close(
+        "A_stable1", a1, np.asarray(m["A_stable1"], dtype=np.float64), atol=5e-3, rtol=1e-4
+    )
+    _assert_close(
+        "B_stable1", b1, np.asarray(m["B_stable1"], dtype=np.float64), atol=5e-3, rtol=1e-4
+    )
+    _assert_close(
+        "C_stable1", c1, np.asarray(m["C_stable1"], dtype=np.float64), atol=5e-3, rtol=1e-4
+    )
+    _assert_close(
+        "D_stable1", d1, np.asarray(m["D_stable1"], dtype=np.float64), atol=5e-3, rtol=1e-4
+    )
+    _assert_close(
+        "K_stable1", k1, np.asarray(m["K_stable1"], dtype=np.float64), atol=5e-3, rtol=1e-3
+    )

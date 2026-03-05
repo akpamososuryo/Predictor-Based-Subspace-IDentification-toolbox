@@ -17,9 +17,6 @@ def _is_batch(x: object) -> bool:
 
 def _as_2d_float64(x: object, name: str) -> ArrayF64:
     arr = np.asarray(x, dtype=np.float64)
-    if arr.ndim == 1:
-        # MATLAB vectors may load from .mat as 1D arrays; treat as single-channel signals.
-        arr = arr[np.newaxis, :]
     if arr.ndim != 2:
         raise ValueError(f"DX2ABCDK expects '{name}' to be a 2D matrix.")
     return arr
@@ -144,10 +141,8 @@ def dx2abcdk(
             raise ValueError("For batch mode, x/u/y must all be list or tuple inputs.")
         y_batch = list(y)
         x_batch = list(x)
-        if u is None:
-            u_batch = [None] * len(y_batch)
-        else:
-            u_batch = list(u)
+        
+        u_batch = [None] * len(y_batch) if u is None else list(u)
         if not (len(x_batch) == len(y_batch) == len(u_batch)):
             raise ValueError("Batch input lengths for x, u, and y must match.")
     else:
@@ -159,7 +154,7 @@ def dx2abcdk(
     prev_abcdk: tuple[ArrayF64, ArrayF64, ArrayF64, ArrayF64, ArrayF64] | None = None
     vw_prev: ArrayF64 | None = None
 
-    for x_i, u_i, y_i in zip(x_batch, u_batch, y_batch):
+    for x_i, u_i, y_i in zip(x_batch, u_batch, y_batch, strict=True):
         y_arr = _ensure_row_major_samples(_as_2d_float64(y_i, "y"))
         x_arr = _ensure_row_major_samples(_as_2d_float64(x_i, "x"))
 
@@ -263,7 +258,13 @@ def dx2abcdk(
 
         prev_abcdk = (a, b, c_mat, d, k_mat)
 
-    assert a is not None and b is not None and c_mat is not None and d is not None and k_mat is not None
+    assert (
+        a is not None
+        and b is not None
+        and c_mat is not None
+        and d is not None
+        and k_mat is not None
+    )
 
     if return_k:
         return a, b, c_mat, d, k_mat
