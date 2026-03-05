@@ -32,3 +32,8 @@ module = [
   "cvxpy.*"
 ]
 ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+markers = [
+  "parity: tests that compare Python outputs against MATLAB fixture references",
+]
