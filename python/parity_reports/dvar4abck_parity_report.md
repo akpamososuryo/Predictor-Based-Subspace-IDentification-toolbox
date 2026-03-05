@@ -1,0 +1,40 @@
+# dvar4abck_parity_report
+
+| function | case | metric | max_abs | max_rel | atol | rtol | pass |
+|---|---|---|---:|---:|---:|---:|---|
+| dvar4abck | base_c1 | P | 9.541e-17 | 9.961e-14 | 1.0e-08 | 1.0e-06 | yes |
+| dvar4abck | base_c1 | sigma | 0.000e+00 | 0.000e+00 | 1.0e-10 | 1.0e-07 | yes |
+| dvar4abck | base_c1 | dA | 2.776e-16 | 3.887e-15 | 1.0e-08 | 1.0e-06 | yes |
+| dvar4abck | base_c1 | dB | 8.674e-18 | 6.733e-16 | 1.0e-08 | 1.0e-06 | yes |
+| dvar4abck | base_c1 | dC | 4.424e-17 | 5.967e-15 | 1.0e-08 | 1.0e-06 | yes |
+| dvar4abck | base_c1 | dK | 1.804e-16 | 2.102e-15 | 1.0e-08 | 1.0e-06 | yes |
+| dvar4abck | stable1_c1 | P | 5.032e-07 | 2.987e-04 | 2.0e-05 | 2.0e-04 | yes |
+| dvar4abck | stable1_c1 | sigma | 0.000e+00 | 0.000e+00 | 1.0e-08 | 1.0e-06 | yes |
+| dvar4abck | stable1_c1 | dA | 1.707e-09 | 7.169e-06 | 5.0e-05 | 2.0e-04 | yes |
+| dvar4abck | stable1_c1 | dB | 1.673e-07 | 2.164e-06 | 5.0e-05 | 2.0e-04 | yes |
+| dvar4abck | stable1_c1 | dC | 3.040e-10 | 3.665e-04 | 1.0e-07 | 1.0e-05 | yes |
+| dvar4abck | stable1_c1 | dK | 8.003e-08 | 9.994e-08 | 5.0e-05 | 2.0e-04 | yes |
+| dvar4abck | base_c2 | P | 2.220e-15 | 2.630e-14 | 1.0e-08 | 1.0e-06 | yes |
+| dvar4abck | base_c2 | sigma | 0.000e+00 | 0.000e+00 | 1.0e-10 | 1.0e-07 | yes |
+| dvar4abck | base_c2 | dA | 8.986e-16 | 2.890e-14 | 1.0e-08 | 1.0e-06 | yes |
+| dvar4abck | base_c2 | dB | 1.952e-17 | 8.129e-15 | 1.0e-08 | 1.0e-06 | yes |
+| dvar4abck | base_c2 | dC | 1.613e-16 | 1.503e-14 | 1.0e-08 | 1.0e-06 | yes |
+| dvar4abck | base_c2 | dK | 7.772e-16 | 2.891e-15 | 1.0e-08 | 1.0e-06 | yes |
+| dvar4abck | stable1_c2 | P | 2.623e-07 | 1.942e-04 | 2.0e-05 | 2.0e-04 | yes |
+| dvar4abck | stable1_c2 | sigma | 0.000e+00 | 0.000e+00 | 1.0e-08 | 1.0e-06 | yes |
+| dvar4abck | stable1_c2 | dA | 9.036e-09 | 2.168e-05 | 5.0e-05 | 2.0e-04 | yes |
+| dvar4abck | stable1_c2 | dB | 6.925e-09 | 7.404e-07 | 5.0e-05 | 2.0e-04 | yes |
+| dvar4abck | stable1_c2 | dC | 2.974e-10 | 7.518e-06 | 1.0e-07 | 1.0e-05 | yes |
+| dvar4abck | stable1_c2 | dK | 1.311e-06 | 7.959e-06 | 5.0e-05 | 2.0e-04 | yes |
+| dvar4abck | base_c3 | P | 4.163e-17 | 1.781e-14 | 1.0e-08 | 1.0e-06 | yes |
+| dvar4abck | base_c3 | sigma | 0.000e+00 | 0.000e+00 | 1.0e-10 | 1.0e-07 | yes |
+| dvar4abck | base_c3 | dA | 5.204e-17 | 3.621e-15 | 1.0e-08 | 1.0e-06 | yes |
+| dvar4abck | base_c3 | dB | 2.255e-17 | 3.369e-15 | 1.0e-08 | 1.0e-06 | yes |
+| dvar4abck | base_c3 | dC | 1.180e-16 | 1.047e-14 | 1.0e-08 | 1.0e-06 | yes |
+| dvar4abck | base_c3 | dK | 2.220e-16 | 1.812e-15 | 1.0e-08 | 1.0e-06 | yes |
+| dvar4abck | stable1_c3 | P | 1.100e-06 | 1.512e-04 | 2.0e-05 | 2.0e-04 | yes |
+| dvar4abck | stable1_c3 | sigma | 0.000e+00 | 0.000e+00 | 1.0e-08 | 1.0e-06 | yes |
+| dvar4abck | stable1_c3 | dA | 3.956e-09 | 3.654e-06 | 5.0e-05 | 2.0e-04 | yes |
+| dvar4abck | stable1_c3 | dB | 5.507e-08 | 5.919e-06 | 5.0e-05 | 2.0e-04 | yes |
+| dvar4abck | stable1_c3 | dC | 9.196e-11 | 5.307e-07 | 1.0e-07 | 1.0e-05 | yes |
+| dvar4abck | stable1_c3 | dK | 9.878e-06 | 1.007e-05 | 5.0e-05 | 2.0e-04 | yes |
