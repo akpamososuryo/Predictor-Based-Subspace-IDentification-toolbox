@@ -13,6 +13,9 @@ dependencies:
   - ecos
   - h5py
   - matplotlib
+  - ipykernel
   - pytest
   - pytest-cov
+  - ruff
+  - mypy
   - pip
