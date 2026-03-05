@@ -19,6 +19,7 @@ In addition, a global aggregate is auto-generated:
 Current report names include:
 - `dvar2eig_parity_report`
 - `dordvarmax_parity_report`
+- `dordfir_parity_report`
 - `dvar2frd_varx_parity_report`
 - `dvar2frd_abck_parity_report`
 - `dvar2frd_abcdk_parity_report`

@@ -46,6 +46,7 @@ Parity fixture expectation:
 ```matlab
 testutils.generateDvar2eigFixture
 testutils.generateDordvarmaxFixture
+testutils.generateDordfirFixture
 testutils.generateDvar2frdFixture
 testutils.generateDordvarxFixture
 testutils.generateDx2abcdkFixture
