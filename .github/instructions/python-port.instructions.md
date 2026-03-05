@@ -20,6 +20,8 @@ applyTo: "python/**/*.py"
 	strict shape checks at API boundaries.
 - Prefer a shared helper pattern (for example `_as_2d_float64`) in each module to keep this
 	behavior consistent.
+- Consider this boundary coercion a required safeguard (not optional cleanup): do not remove it in
+	follow-up refactors when simplifying code paths.
 
 ## API Design
 - Keep function signatures close to MATLAB names during parity phase.

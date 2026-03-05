@@ -20,6 +20,8 @@ Port `${input:function_name}` from MATLAB to Python.
 - Keep changes Ruff-compatible with project settings (`E`, `F`, `I`, `UP`, `B`, `SIM`) and Python 3.12 typing style.
 - Use `loadmat(..., squeeze_me=False)` for new parity fixtures, and normalize any 1D vectors to
   2D single-channel matrices before dimensionality validation.
+- Keep this normalization in an API-boundary helper (for example `_as_2d_float64`) and treat it as
+  required behavior for parity-safe ports.
 
 ## Deliverables
 - Python implementation.
