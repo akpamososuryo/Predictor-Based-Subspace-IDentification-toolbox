@@ -25,6 +25,7 @@ def test_dordfir_single_shapes_and_finite() -> None:
     p = 10
 
     s, x, fir = dordfir(u, y, f, p)
+    assert not isinstance(x, list)
 
     assert s.ndim == 1
     assert x.ndim == 2

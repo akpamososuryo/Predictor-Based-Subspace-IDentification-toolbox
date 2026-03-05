@@ -48,6 +48,7 @@ def _assert_case(
     no_d: int,
 ) -> None:
     s, x, varx, umat, zps = dordvarx(u, y, f, p, reg="none", opt="gcv", weight=weight, no_d=no_d)
+    assert not isinstance(x, list)
 
     _assert_close(f"S_{tag}", s, np.asarray(m[f"S_{tag}"], dtype=np.float64), atol=1e-8, rtol=1e-6)
     _assert_close(

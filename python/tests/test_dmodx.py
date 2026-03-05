@@ -9,6 +9,7 @@ from pbsid.lti.dmodx import dmodx
 def test_dmodx_single_matrix_truncates_rows() -> None:
     x = np.arange(30, dtype=np.float64).reshape(5, 6)
     out = dmodx(x, 3)
+    assert not isinstance(out, list)
     assert out.shape == (3, 6)
     np.testing.assert_allclose(out, x[:3, :])
 

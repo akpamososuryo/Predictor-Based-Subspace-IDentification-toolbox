@@ -7,6 +7,7 @@ from pbsid.lti.modx import modx
 def test_modx_single_matrix_truncates_rows():
     X = np.arange(30, dtype=np.float64).reshape(5, 6)
     x = modx(X, 3)
+    assert not isinstance(x, list)
     assert x.shape == (3, 6)
     np.testing.assert_allclose(x, X[:3, :])
 

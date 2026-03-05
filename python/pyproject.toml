@@ -27,6 +27,7 @@ disallow_incomplete_defs = false
 
 [[tool.mypy.overrides]]
 module = [
+  "scipy.*",
   "control.*",
   "slycot.*",
   "cvxpy.*"

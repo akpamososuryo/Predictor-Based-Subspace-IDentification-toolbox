@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import overload
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
@@ -15,16 +14,6 @@ def _as_2d_float64(x: object) -> ArrayF64:
     if arr.ndim != 2:
         raise ValueError("modx expects a 2D matrix (or a sequence of 2D matrices).")
     return arr
-
-
-@overload
-def modx(X: Sequence[ArrayLike], n: int) -> list[ArrayF64]:
-    ...
-
-
-@overload
-def modx(X: ArrayLike, n: int) -> ArrayF64:
-    ...
 
 
 def modx(X: ArrayLike | Sequence[ArrayLike], n: int) -> ArrayF64 | list[ArrayF64]:

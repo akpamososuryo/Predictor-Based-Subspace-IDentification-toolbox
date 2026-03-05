@@ -22,6 +22,10 @@ Port `${input:function_name}` from MATLAB to Python.
   2D single-channel matrices before dimensionality validation.
 - Keep this normalization in an API-boundary helper (for example `_as_2d_float64`) and treat it as
   required behavior for parity-safe ports.
+- For batch-mode functions, use direct `isinstance(..., (list, tuple))` narrowing (not helper bools)
+  so mypy infers list/tuple element types correctly.
+- If returned outputs have union tuple shapes, add explicit narrowing/casts in tests before tuple
+  unpacking.
 
 ## Deliverables
 - Python implementation.

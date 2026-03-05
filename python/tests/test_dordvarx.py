@@ -23,6 +23,7 @@ def _make_u_y(
 def test_dordvarx_single_shapes_and_finite() -> None:
     u, y = _make_u_y()
     s, x, varx, umat, zps = dordvarx(u, y, f=5, p=10)
+    assert not isinstance(x, list)
 
     assert s.ndim == 1
     assert x.ndim == 2
@@ -69,6 +70,7 @@ def test_dordvarx_batch_returns_list_x() -> None:
 def test_dordvarx_weight_mode_runs() -> None:
     u, y = _make_u_y(seed=23)
     s, x, varx, umat, zps = dordvarx(u, y, f=5, p=10, weight=1)
+    assert not isinstance(x, list)
 
     assert s.ndim == 1
     assert x.ndim == 2

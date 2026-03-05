@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import overload
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
@@ -9,16 +8,6 @@ from numpy.typing import ArrayLike, NDArray
 from .modx import modx
 
 ArrayF64 = NDArray[np.float64]
-
-
-@overload
-def dmodx(X: Sequence[ArrayLike], n: int) -> list[ArrayF64]:
-    ...
-
-
-@overload
-def dmodx(X: ArrayLike, n: int) -> ArrayF64:
-    ...
 
 
 def dmodx(X: ArrayLike | Sequence[ArrayLike], n: int) -> ArrayF64 | list[ArrayF64]:

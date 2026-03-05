@@ -26,7 +26,7 @@ def _ensure_row_major_samples(arr: ArrayF64) -> ArrayF64:
 def _regress_none(
     y: ArrayF64, p: ArrayF64, x0: ArrayF64 | None = None
 ) -> tuple[ArrayF64, ArrayF64]:
-    zps = np.linalg.pinv(p)
+    zps = np.asarray(np.linalg.pinv(p), dtype=np.float64)
     if x0 is None:
         return y @ zps, zps
     return x0 + (y - x0 @ p) @ zps, zps

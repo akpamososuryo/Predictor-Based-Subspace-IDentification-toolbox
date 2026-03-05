@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import overload
+from typing import cast, overload
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
@@ -9,11 +9,6 @@ from scipy.linalg import eig, solve_discrete_are
 ArrayF64 = NDArray[np.float64]
 ABCK = tuple[ArrayF64, ArrayF64, ArrayF64, ArrayF64]
 ABC = tuple[ArrayF64, ArrayF64, ArrayF64]
-
-
-def _is_batch(x: object) -> bool:
-    return isinstance(x, (list, tuple))
-
 
 def _as_2d_float64(x: object, name: str) -> ArrayF64:
     arr = np.asarray(x, dtype=np.float64)
@@ -135,18 +130,19 @@ def dx2abck(
     if f > p:
         raise ValueError("Future window size f must equal or smaller then past window p. (f <= p)")
 
-    if _is_batch(y):
-        if not (_is_batch(x) and (_is_batch(u) or u is None)):
+    if isinstance(y, (list, tuple)):
+        if not (isinstance(x, (list, tuple)) and (isinstance(u, (list, tuple)) or u is None)):
             raise ValueError("For batch mode, x/u/y must all be list or tuple inputs.")
         y_batch = list(y)
         x_batch = list(x)
-        u_batch = [None] * len(y_batch) if u is None else list(u)
+        u_batch: list[ArrayLike | None]
+        u_batch = [None] * len(y_batch) if u is None else cast(list[ArrayLike | None], list(u))
         if not (len(x_batch) == len(y_batch) == len(u_batch)):
             raise ValueError("Batch input lengths for x, u, and y must match.")
     else:
         y_batch = [y]
         x_batch = [x]
-        u_batch = [u]
+        u_batch = [cast(ArrayLike | None, u)]
 
     a = b = c_mat = k_mat = None
     prev_abck: tuple[ArrayF64, ArrayF64, ArrayF64, ArrayF64] | None = None

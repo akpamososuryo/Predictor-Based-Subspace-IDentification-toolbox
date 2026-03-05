@@ -42,6 +42,10 @@ Port the MATLAB PBSID toolbox to Python with numerical-parity-first discipline.
 	- `ruff check .`
 	- `python -m mypy --config-file pyproject.toml src tests`
 	- `python -m pytest tests -q`
+- For mypy compatibility on batch-enabled APIs, prefer direct `isinstance(..., (list, tuple))`
+	narrowing over helper-boolean narrowing so list/tuple element types are inferred correctly.
+- When a function legitimately returns a union of tuple shapes (for example optional deltas), add
+	explicit type narrowing/casts in tests before tuple unpacking.
 
 ## Dependency Policy
 - Preferred stack: `numpy`, `scipy`, `python-control`, `slycot`, `pytest`.

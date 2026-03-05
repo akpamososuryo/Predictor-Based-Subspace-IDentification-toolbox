@@ -10,11 +10,6 @@ from .dx2abck import _force_stable_a
 ArrayF64 = NDArray[np.float64]
 ABC = tuple[ArrayF64, ArrayF64, ArrayF64]
 
-
-def _is_batch(x: object) -> bool:
-    return isinstance(x, (list, tuple))
-
-
 def _as_2d_float64(x: object, name: str) -> ArrayF64:
     arr = np.asarray(x, dtype=np.float64)
     if arr.ndim == 1:
@@ -49,8 +44,8 @@ def dx2abc(
     if f > p:
         raise ValueError("Future window size f must equal or smaller then past window p. (f <= p)")
 
-    if _is_batch(y):
-        if not (_is_batch(x) and _is_batch(u)):
+    if isinstance(y, (list, tuple)):
+        if not (isinstance(x, (list, tuple)) and isinstance(u, (list, tuple))):
             raise ValueError("For batch mode, x/u/y must all be list or tuple inputs.")
         y_batch = list(y)
         x_batch = list(x)

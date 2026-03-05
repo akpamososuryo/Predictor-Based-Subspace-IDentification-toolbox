@@ -34,6 +34,9 @@ applyTo: "python/**/*.py"
 - Do not configure deprecated NumPy mypy plugins.
 - Use built-in generics (`list`, `dict`, `tuple`) instead of `typing.List`-style aliases.
 - Keep imports sorted and free of unused symbols.
+- Prefer direct `isinstance(..., (list, tuple))` checks in batch branches so mypy can narrow types.
+- For APIs with union return signatures (for example with optional extra outputs), narrow with
+	assertions or `typing.cast` at call sites/tests before attribute access or tuple unpacking.
 
 ## Ruff Compatibility
 - Ensure code passes project Ruff rules from `python/pyproject.toml` (`E`, `F`, `I`, `UP`, `B`, `SIM`).
@@ -52,3 +55,8 @@ applyTo: "python/**/*.py"
 	- `ruff check .`
 	- `python -m mypy --config-file pyproject.toml src tests`
 	- `python -m pytest tests -q`
+
+## Dependency Typing Notes
+- If third-party runtime dependencies are available but type stubs are not (for example `scipy.*`
+	in this repo), keep `ignore_missing_imports` scoped in `pyproject.toml` overrides rather than
+	adding broad `type: ignore` comments in source files.
