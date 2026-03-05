@@ -170,7 +170,7 @@ for k = 1:batch
             BK = [B0 K0] + (x(:,2:end) - A*x(:,1:end-1) - [B0 K0]*z)*pinv(z);
         end
         B = BK(:,1:r);
-        K = BK(:,R+1:r+l);
+        K = BK(:,r+1:r+l);
     end
     
     % If selected, find a quaranteed stable A-KC matrix
