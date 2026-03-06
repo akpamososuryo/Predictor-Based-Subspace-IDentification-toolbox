@@ -79,10 +79,22 @@ def test_dordvarx_weight_mode_runs() -> None:
     assert zps.ndim == 2
 
 
-def test_dordvarx_rejects_unsupported_regularization() -> None:
+def test_dordvarx_tikh_gcv_runs() -> None:
     u, y = _make_u_y(seed=24)
-    with pytest.raises(NotImplementedError, match="reg='none'"):
-        _ = dordvarx(u, y, f=5, p=10, reg="tikh")
+    s, x, varx, umat, zps = dordvarx(u, y, f=5, p=10, reg="tikh", opt="gcv")
+    assert not isinstance(x, list)
+    assert s.ndim == 1
+    assert x.ndim == 2
+    assert varx.ndim == 2
+    assert umat.ndim == 2
+    assert zps.ndim == 2
+    assert np.all(np.isfinite(varx))
+
+
+def test_dordvarx_rejects_unsupported_regularization() -> None:
+    u, y = _make_u_y(seed=124)
+    with pytest.raises(NotImplementedError, match="reg='none' and reg='tikh'"):
+        _ = dordvarx(u, y, f=5, p=10, reg="tsvd")
 
 
 def test_dordvarx_rejects_f_greater_than_p() -> None:

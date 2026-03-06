@@ -62,10 +62,21 @@ def test_dordvarmax_no_d_changes_varmax_width() -> None:
     assert varmax_without_d.shape[1] == 8 * m
 
 
-def test_dordvarmax_rejects_non_none_regularization() -> None:
+def test_dordvarmax_tikh_els_runs() -> None:
     u, y = _make_u_y(seed=116)
-    with pytest.raises(NotImplementedError, match="reg='none'"):
-        _ = dordvarmax(u, y, f=5, p=10, reg="tikh")
+    s, x, varmax, umat = dordvarmax(u, y, f=5, p=10, method="els", reg="tikh", opt="gcv")
+    assert not isinstance(x, list)
+    assert s.ndim == 1
+    assert x.ndim == 2
+    assert varmax.ndim == 2
+    assert umat.ndim == 2
+    assert np.all(np.isfinite(varmax))
+
+
+def test_dordvarmax_rejects_unsupported_regularization() -> None:
+    u, y = _make_u_y(seed=216)
+    with pytest.raises(NotImplementedError, match="reg='none' and reg='tikh'"):
+        _ = dordvarmax(u, y, f=5, p=10, reg="tsvd")
 
 
 def test_dordvarmax_rejects_unknown_method() -> None:

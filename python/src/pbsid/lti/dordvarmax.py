@@ -6,6 +6,8 @@ import numpy as np
 from numpy.typing import ArrayLike, NDArray
 from scipy.optimize import fminbound
 
+from ._regression import regress_matrix
+
 type ArrayF64 = NDArray[np.float64]
 type XOut = ArrayF64 | list[ArrayF64]
 
@@ -67,6 +69,26 @@ def _rls_ew_track(
     p_next = 0.5 * (p_next + p_next.T)
     e = y_col - theta @ z_col
     theta_next = theta + np.outer(e, z_col) @ p_next
+    return theta_next, p_next
+
+
+def _rls_ew_track_reg(
+    z_col: ArrayF64,
+    y_col: ArrayF64,
+    theta: ArrayF64,
+    p_mat: ArrayF64,
+    lamb: float,
+    reg_min: float,
+) -> tuple[ArrayF64, ArrayF64]:
+    denom = lamb + z_col.T @ p_mat @ z_col
+    p_next = (1.0 / lamb) * (p_mat - (p_mat @ np.outer(z_col, z_col) @ p_mat) / denom)
+    p_next = 0.5 * (p_next + p_next.T)
+    p_reg = np.linalg.solve(
+        np.eye(p_next.shape[0], dtype=np.float64) + (reg_min**2) * p_next,
+        p_next,
+    )
+    e = y_col - theta @ z_col
+    theta_next = theta + np.outer(e, z_col) @ p_reg
     return theta_next, p_next
 
 
@@ -198,6 +220,136 @@ def _exls_reg_none(
     raise ValueError("Unknown DORDVARMAX method.")
 
 
+def _weighted_forgetting_view(arr: ArrayF64, lamb: float) -> ArrayF64:
+    powers = lamb ** np.arange(arr.shape[1] - 1, -1, -1, dtype=np.float64)
+    return arr * powers[np.newaxis, :]
+
+
+def _exls_reg_tikh(
+    y: ArrayF64,
+    z: ArrayF64,
+    p: int,
+    r: int,
+    tol: float,
+    method: str,
+    opt: str | float,
+    varmax0: ArrayF64 | None = None,
+) -> tuple[ArrayF64, ArrayF64]:
+    n = y.shape[1] + p
+    l_out = y.shape[0]
+    m = r + 2 * l_out
+    ireg = float(np.sqrt(tol))
+
+    if varmax0 is None:
+        if method in {"gradient", "grad"}:
+            varmax, reg_min, _ = regress_matrix(y, z, "tikh", opt)
+        else:
+            varmax = np.zeros((l_out, z.shape[0]), dtype=np.float64)
+            reg_min = 0.0
+    else:
+        varmax = varmax0.copy()
+        _, reg_min, _ = regress_matrix(y, z, "tikh", opt, x0=varmax0)
+
+    cost_prev = 1e10
+
+    if method in {"gradient", "grad"}:
+        lamb = 1.0
+        maxit = 100
+        k = 1
+        while k <= maxit:
+            e = _eval_varmax(y, z, p, r, varmax)
+            cost = float(
+                np.linalg.norm(e.T, ord="fro") ** 2
+                + (reg_min**2) * np.linalg.norm(varmax, ord="fro") ** 2
+            )
+            converged = abs(cost_prev - cost) <= (tol**2) * n
+
+            e_full = np.zeros((l_out, n), dtype=np.float64)
+            e_full[:, p:n] = e
+            for i in range(1, p + 1):
+                row0 = (i - 1) * m + r + l_out
+                row1 = i * m
+                z[row0:row1, :] = e_full[:, i - 1 : n + i - p - 1]
+
+            _, reg_min, _ = regress_matrix(y, z, "tikh", opt)
+            direction = e @ z.T
+
+            def objective(
+                x: float,
+                varmax_: ArrayF64 = varmax,
+                direction_: ArrayF64 = direction,
+                reg_min_: float = reg_min,
+            ) -> float:
+                candidate = varmax_ + x * direction_
+                e_x = _eval_varmax(y, z, p, r, candidate)
+                return float(
+                    (
+                        np.linalg.norm(e_x.T, ord="fro") ** 2
+                        + (reg_min_**2) * np.linalg.norm(candidate, ord="fro") ** 2
+                    )
+                    / n
+                )
+
+            lamb = float(fminbound(objective, 0.0, lamb, xtol=1e-4, maxfun=500))
+            varmax = varmax + lamb * direction
+            varmax = (1.0 / (1.0 + 2.0 * lamb * reg_min**2)) * varmax
+
+            cost_prev = cost
+            k += 1
+            if converged:
+                break
+
+        return varmax, z
+
+    p_scalar = ireg
+    lamb = tol ** (1.0 / n)
+    maxit = 10
+    k = 1
+    p0 = p_scalar
+
+    while k <= maxit:
+        y_w = _weighted_forgetting_view(y, lamb)
+        z_w = _weighted_forgetting_view(z, lamb)
+        _, reg_min, _ = regress_matrix(y_w, z_w, "tikh", opt, x0=varmax)
+        p_current = np.eye(z.shape[0], dtype=np.float64) / p0
+
+        for i_col in range(n - p):
+            varmax, p_current = _rls_ew_track_reg(
+                z[:, i_col], y[:, i_col], varmax, p_current, lamb, reg_min
+            )
+            e_col = y[:, i_col] - varmax @ z[:, i_col]
+
+            if i_col != (n - p - 1):
+                for j in range(l_out):
+                    for blk in range(0, p - 1):
+                        dst = blk * m + r + l_out + j
+                        src = (blk + 1) * m + r + l_out + j
+                        z[dst, i_col + 1] = z[src, i_col]
+                    z[(p - 1) * m + r + l_out + j, i_col + 1] = e_col[j]
+
+        e = y - varmax @ z
+        cost = float(
+            np.linalg.norm(e.T, ord="fro") ** 2
+            + (reg_min**2) * np.linalg.norm(varmax, ord="fro") ** 2
+        )
+        converged = abs(cost_prev - cost) <= (tol**2) * n
+
+        e_full = np.zeros((l_out, n), dtype=np.float64)
+        e_full[:, p:n] = e
+        for i in range(1, p + 1):
+            row0 = (i - 1) * m + r + l_out
+            row1 = i * m
+            z[row0:row1, :] = e_full[:, i - 1 : n + i - p - 1]
+
+        k += 1
+        lamb = (lamb**n) ** (1.0 / (k * n))
+        cost_prev = cost
+        if converged:
+            break
+
+    return varmax, z
+
+
 def dordvarmax(
     u: ArrayLike | list[ArrayLike] | tuple[ArrayLike, ...] | None,
     y: ArrayLike | list[ArrayLike] | tuple[ArrayLike, ...],
@@ -214,17 +366,19 @@ def dordvarmax(
 
     MATLAB parity target: ``dordvarmax.m``.
 
-    Notes:
-    - Current Python port supports ``reg='none'``.
-    - `method` values ``'gradient'`` and ``'els'`` are accepted and use the
-      same iterative whitening core in this parity phase.
+        Notes:
+        - Current Python port supports ``reg='none'``.
+        - ``reg='tikh'`` is supported for the MATLAB-style ELS workflow and the
+            matching gradient path with ``opt='gcv'`` or a scalar value.
     """
     if f < 1 or p < 1:
         raise ValueError("Past/future windows must be positive integers.")
 
     reg_l = str(reg).lower()
-    if reg_l != "none":
-        raise NotImplementedError("dordvarmax currently supports only reg='none'.")
+    if reg_l not in {"none", "tikh"}:
+        raise NotImplementedError(
+            "dordvarmax currently supports only reg='none' and reg='tikh'."
+        )
 
     _ = opt
     method_l = str(method).lower()
@@ -286,7 +440,10 @@ def dordvarmax(
         if not no_d_flag:
             z = np.vstack((z, u_reg))
 
-        varmax, z = _exls_reg_none(y_reg, z, p, r, tol, method_l, varmax0=varmax)
+        if reg_l == "none":
+            varmax, z = _exls_reg_none(y_reg, z, p, r, tol, method_l, varmax0=varmax)
+        else:
+            varmax, z = _exls_reg_tikh(y_reg, z, p, r, tol, method_l, opt, varmax0=varmax)
         zz.append(z)
 
     assert varmax is not None

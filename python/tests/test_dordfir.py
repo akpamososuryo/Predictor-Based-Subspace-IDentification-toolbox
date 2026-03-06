@@ -64,7 +64,17 @@ def test_dordfir_batch_returns_list_x() -> None:
     assert fir.ndim == 2
 
 
-def test_dordfir_rejects_unsupported_regularization() -> None:
+def test_dordfir_tikh_gcv_runs() -> None:
     u, y = _make_io(seed=13)
-    with pytest.raises(NotImplementedError, match="reg='none'"):
-        _ = dordfir(u, y, f=5, p=10, reg="tikh")
+    s, x, fir = dordfir(u, y, f=5, p=10, reg="tikh", opt="gcv")
+    assert not isinstance(x, list)
+    assert s.ndim == 1
+    assert x.ndim == 2
+    assert fir.ndim == 2
+    assert np.all(np.isfinite(fir))
+
+
+def test_dordfir_rejects_unsupported_regularization() -> None:
+    u, y = _make_io(seed=113)
+    with pytest.raises(NotImplementedError, match="reg='none' and reg='tikh'"):
+        _ = dordfir(u, y, f=5, p=10, reg="tsvd")

@@ -3,6 +3,8 @@ from __future__ import annotations
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
+from ._regression import regress_matrix
+
 type ArrayF64 = NDArray[np.float64]
 type XOut = ArrayF64 | list[ArrayF64]
 
@@ -23,12 +25,6 @@ def _ensure_row_major_samples(arr: ArrayF64) -> ArrayF64:
     return arr
 
 
-def _regress_none(y: ArrayF64, p: ArrayF64, x0: ArrayF64 | None = None) -> ArrayF64:
-    if x0 is None:
-        return y @ np.linalg.pinv(p)
-    return x0 + (y - x0 @ p) @ np.linalg.pinv(p)
-
-
 def dordfir(
     u: ArrayLike | list[ArrayLike] | tuple[ArrayLike, ...],
     y: ArrayLike | list[ArrayLike] | tuple[ArrayLike, ...],
@@ -40,13 +36,16 @@ def dordfir(
 ) -> tuple[ArrayF64, XOut, ArrayF64]:
     """Estimate order information/state sequence for FIR-based LTI identification.
 
-    MATLAB parity target: ``dordfir.m``. This implementation currently supports
-    the `reg="none"` path and batch updates.
+    MATLAB parity target: ``dordfir.m``.
+
+    Supported regularization modes in the current Python port:
+    - ``reg="none"``
+    - ``reg="tikh"`` with ``opt="gcv"`` or a scalar regularization value
     """
     reg_l = str(reg).lower()
-    if reg_l != "none":
+    if reg_l not in {"none", "tikh"}:
         raise NotImplementedError(
-            "dordfir currently supports only reg='none' in the Python port."
+            "dordfir currently supports only reg='none' and reg='tikh' in the Python port."
         )
 
     if f < 1 or p < 1:
@@ -101,7 +100,7 @@ def dordfir(
         if not no_d_flag:
             z = np.vstack((z, u_reg))
 
-        fir = _regress_none(y_reg, z, fir)
+        fir, _, _ = regress_matrix(y_reg, z, reg_l, opt, x0=fir)
         zz.append(z)
 
     assert fir is not None

@@ -3,6 +3,8 @@ from __future__ import annotations
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
+from ._regression import regress_matrix
+
 type ArrayF64 = NDArray[np.float64]
 type XOut = ArrayF64 | list[ArrayF64]
 
@@ -23,15 +25,6 @@ def _ensure_row_major_samples(arr: ArrayF64) -> ArrayF64:
     return arr
 
 
-def _regress_none(
-    y: ArrayF64, p: ArrayF64, x0: ArrayF64 | None = None
-) -> tuple[ArrayF64, ArrayF64]:
-    zps = np.asarray(np.linalg.pinv(p), dtype=np.float64)
-    if x0 is None:
-        return y @ zps, zps
-    return x0 + (y - x0 @ p) @ zps, zps
-
-
 def dordvarx(
     u: ArrayLike | list[ArrayLike] | tuple[ArrayLike, ...] | None,
     y: ArrayLike | list[ArrayLike] | tuple[ArrayLike, ...],
@@ -44,13 +37,16 @@ def dordvarx(
 ) -> tuple[ArrayF64, XOut, ArrayF64, ArrayF64, ArrayF64]:
     """Closed-loop LTI order estimation and state-sequence preprocessing.
 
-    MATLAB parity target: ``dordvarx.m``. This implementation currently supports
-    the `reg="none"` path, including batch updates and `weight` modes 0/1.
+    MATLAB parity target: ``dordvarx.m``.
+
+    Supported regularization modes in the current Python port:
+    - ``reg="none"``
+    - ``reg="tikh"`` with ``opt="gcv"`` or a scalar regularization value
     """
     reg_l = str(reg).lower()
-    if reg_l != "none":
+    if reg_l not in {"none", "tikh"}:
         raise NotImplementedError(
-            "dordvarx currently supports only reg='none' in the Python port."
+            "dordvarx currently supports only reg='none' and reg='tikh' in the Python port."
         )
 
     if f < 1 or p < 1:
@@ -117,7 +113,7 @@ def dordvarx(
         if not no_d_flag:
             z = np.vstack((z, u_reg))
 
-        varx, zps_out = _regress_none(y_reg, z, varx)
+        varx, _, zps_out = regress_matrix(y_reg, z, reg_l, opt, x0=varx)
         zz.append(z)
         z_last = z
 
