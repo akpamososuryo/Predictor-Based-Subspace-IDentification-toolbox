@@ -45,6 +45,8 @@ in the related documents if needed.
 	own module (for example `snr.py`) and be imported where needed.
 - Reserve shared helper modules for genuinely Python-side glue code, not for housing direct ports of
 	separate MATLAB functions.
+- If a helper is intended to be reusable beyond a single example or notebook, place it under
+	`python/src/` as part of the package instead of under `python/examples/`.
 
 ### Pseudoinverse for Regression
 - MATLAB `regress(Y, Z)` computes `Y @ pinv(Z)`
@@ -77,6 +79,18 @@ in the related documents if needed.
 	still look like the MATLAB example after refactors.
 - When the MATLAB page is driven by unseeded random simulation, use the HTML as a structural and
 	visual reference rather than expecting exact numeric equality in the printed SNR / VAF values.
+- When porting MATLAB examples or other MATLAB scripts to Jupyter notebooks, treat each MATLAB `%%`
+	section marker as a notebook section boundary and split the port into separate notebook cells
+	accordingly, rather than collapsing multiple MATLAB sections into one large code cell.
+- When porting MATLAB examples to Jupyter notebooks, carry over the MATLAB plots as part of the
+	notebook workflow whenever practical. Prefer `numpy`, `scipy`, and `python-control` for the
+	Python-side implementation; if a needed plot is not readily available there, check for an existing
+	MATLAB plotting helper in the workspace before introducing a custom plotting helper.
+- If a notebook helper is derived from a MATLAB function or plotting pattern in this workspace,
+	prefer implementing it as a separate Python module rather than leaving that logic embedded inline
+	in the notebook.
+- In notebook ports, keep each plotting routine in its own dedicated code cell rather than bundling
+	multiple figure-producing calls into a single cell.
 
 ## Parity-First Lessons Learned
 - During parity phase, implement MATLAB behavior exactly before any cleanup or stabilization.
