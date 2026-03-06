@@ -4,6 +4,16 @@ import csv
 import re
 from pathlib import Path
 from statistics import mean, pstdev
+from typing import TypedDict
+
+
+class _ParityBucket(TypedDict):
+    max_abs: list[float]
+    max_rel: list[float]
+    atol: list[float]
+    rtol: list[float]
+    pass_values: list[bool]
+    reports: set[str]
 
 
 def _parse_bool(value: str) -> bool:
@@ -23,7 +33,7 @@ def _write_main_parity_report(out_dir: Path) -> None:
     if not source_csvs:
         return
 
-    grouped: dict[tuple[str, str], dict[str, list[float] | list[bool] | set[str]]] = {}
+    grouped: dict[tuple[str, str], _ParityBucket] = {}
     for csv_path in source_csvs:
         with csv_path.open("r", newline="", encoding="utf-8") as f:
             reader = csv.DictReader(f)
@@ -38,7 +48,7 @@ def _write_main_parity_report(out_dir: Path) -> None:
                         "max_rel": [],
                         "atol": [],
                         "rtol": [],
-                        "pass": [],
+                        "pass_values": [],
                         "reports": set(),
                     },
                 )
@@ -46,7 +56,7 @@ def _write_main_parity_report(out_dir: Path) -> None:
                 bucket["max_rel"].append(float(row["max_rel"]))
                 bucket["atol"].append(float(row["atol"]))
                 bucket["rtol"].append(float(row["rtol"]))
-                bucket["pass"].append(_parse_bool(row["pass"]))
+                bucket["pass_values"].append(_parse_bool(row["pass"]))
                 bucket["reports"].add(csv_path.stem)
 
     headers = [
@@ -73,7 +83,7 @@ def _write_main_parity_report(out_dir: Path) -> None:
         max_rel = bucket["max_rel"]
         atol_vals = bucket["atol"]
         rtol_vals = bucket["rtol"]
-        pass_vals = bucket["pass"]
+        pass_vals = bucket["pass_values"]
         reports = bucket["reports"]
         n_rows = len(max_abs)
 
@@ -91,7 +101,7 @@ def _write_main_parity_report(out_dir: Path) -> None:
         pass_rate = mean(1.0 if p else 0.0 for p in pass_vals)
 
         severity_flag = "normal"
-        # Absolute errors can look large on huge-magnitude matrices while relative fit is still good.
+        # Large absolute error can still be acceptable if the relative fit remains strong.
         if pass_rate == 1.0 and mean_abs_norm > 1e3 and mean_rel_norm < 0.25:
             severity_flag = "scale-driven-high-abs"
         elif pass_rate < 1.0:

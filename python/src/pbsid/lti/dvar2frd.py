@@ -122,19 +122,11 @@ def _dvar2frd_varx(
 
 
 def _build_dar(a_inv: ArrayC128, c_arr: ArrayF64, bk: ArrayF64) -> ArrayC128:
-    n = a_inv.shape[0]
-    n_y = c_arr.shape[0]
-    n_in = bk.shape[1]
-    d_ar = np.zeros((n * n, n_y, n_in), dtype=np.complex128)
-    for j in range(n):
-        for b in range(n):
-            sigma = np.zeros((n, n), dtype=np.complex128)
-            sigma[b, j] = 1.0
-            core = a_inv @ sigma @ a_inv
-            for c in range(n_y):
-                for v in range(n_in):
-                    d_ar[b + j * n, c, v] = c_arr[c, :] @ core @ bk[:, v]
-    return d_ar
+    left = np.asarray(c_arr @ a_inv, dtype=np.complex128)
+    right = np.asarray(a_inv @ bk, dtype=np.complex128)
+    d_blocks = np.einsum("cb,jv->jbcv", left, right, optimize=True)
+    reshaped = d_blocks.reshape(a_inv.shape[0] * a_inv.shape[0], c_arr.shape[0], bk.shape[1])
+    return np.asarray(reshaped, dtype=np.complex128)
 
 
 def _dvar2frd_abck(

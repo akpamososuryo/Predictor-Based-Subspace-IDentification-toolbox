@@ -21,11 +21,12 @@ def _reggcv_tikh(yp: ArrayF64, eigvecs: ArrayF64, eigvals: ArrayF64) -> float:
     beta = eigvecs.T @ yp
     s = np.sqrt(eigvals)
     smin_ratio = 16.0 * np.finfo(np.float64).eps
-    reg_param = np.zeros((200,), dtype=np.float64)
-    reg_param[-1] = max(s[-1], s[0] * smin_ratio)
-    ratio = (s[0] / reg_param[-1]) ** (1.0 / (reg_param.size - 1))
-    for i in range(reg_param.size - 2, -1, -1):
-        reg_param[i] = ratio * reg_param[i + 1]
+    lower = float(max(s[-1], s[0] * smin_ratio))
+    upper = float(s[0])
+    if upper <= 0.0:
+        reg_param = np.full((200,), lower, dtype=np.float64)
+    else:
+        reg_param = np.geomspace(upper, lower, num=200, dtype=np.float64)
 
     def gcv_fun(lam: float) -> float:
         filt = (lam**2) / (eigvals + lam**2)

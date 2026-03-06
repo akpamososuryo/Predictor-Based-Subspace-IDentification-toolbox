@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import cast
 
 import numpy as np
 import pytest
@@ -80,20 +81,24 @@ def test_dvar4abck_parity_base_and_stable1_fixture() -> None:
         uproj_b = np.asarray(m[f"U_base_{case_label}"], dtype=np.float64)
         zps_b = np.asarray(m[f"Zps_base_{case_label}"], dtype=np.float64)
 
-        p_cov_b, sigma_b, da_b, db_b, dc_b, dk_b = dvar4abck(
-            x_b,
-            u_b,
-            y_b,
-            f_b,
-            p_b,
-            a_b,
-            b_b,
-            c_b,
-            k_b,
-            uproj_b,
-            zps_b,
-            return_deltas=True,
+        base_result = cast(
+            tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray],
+            dvar4abck(
+                x_b,
+                u_b,
+                y_b,
+                f_b,
+                p_b,
+                a_b,
+                b_b,
+                c_b,
+                k_b,
+                uproj_b,
+                zps_b,
+                return_deltas=True,
+            ),
         )
+        p_cov_b, sigma_b, da_b, db_b, dc_b, dk_b = base_result
 
         _record_metric(
             rows=rows,
@@ -162,20 +167,24 @@ def test_dvar4abck_parity_base_and_stable1_fixture() -> None:
         uproj_s1 = np.asarray(m[f"U_stable1_{case_label}"], dtype=np.float64)
         zps_s1 = np.asarray(m[f"Zps_stable1_{case_label}"], dtype=np.float64)
 
-        p_cov_s1, sigma_s1, da_s1, db_s1, dc_s1, dk_s1 = dvar4abck(
-            x_s1,
-            u_s1,
-            y_s1,
-            f_s1,
-            p_s1,
-            a_s1,
-            b_s1,
-            c_s1,
-            k_s1,
-            uproj_s1,
-            zps_s1,
-            return_deltas=True,
+        stable_result = cast(
+            tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray],
+            dvar4abck(
+                x_s1,
+                u_s1,
+                y_s1,
+                f_s1,
+                p_s1,
+                a_s1,
+                b_s1,
+                c_s1,
+                k_s1,
+                uproj_s1,
+                zps_s1,
+                return_deltas=True,
+            ),
         )
+        p_cov_s1, sigma_s1, da_s1, db_s1, dc_s1, dk_s1 = stable_result
 
         _record_metric(
             rows=rows,
