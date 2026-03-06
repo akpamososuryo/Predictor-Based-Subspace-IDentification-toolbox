@@ -13,6 +13,11 @@ from _common import (
 
 
 def main() -> None:
+    print(
+        "[ex01-note] Python currently runs the ported no-regularization "
+        "dordvarx/dordvarmax path; MATLAB ex01 uses tikh/gcv regularization."
+    )
+
     a = np.array(
         [
             [0.67, 0.67, 0.0, 0.0],

@@ -113,6 +113,8 @@ def estimate_varx_abcdk(
     f: int,
     p: int,
 ) -> tuple[ArrayF64, ArrayF64, ArrayF64, ArrayF64, ArrayF64, ArrayF64, ArrayF64, ArrayF64]:
+    # MATLAB ex01-ex09 typically use tikh/gcv regularization here.
+    # The current Python port only exposes the reg="none" path.
     s, x, varx, u_proj, zps = dordvarx(u, y, f, p, reg="none", opt="gcv")
     x_n = dmodx(x, n)
     a, b, c, d, k = dx2abcdk(x_n, u, y, f, p, c="none", return_k=True)
@@ -126,7 +128,10 @@ def estimate_varmax_abcdk(
     f: int,
     p: int,
 ) -> tuple[ArrayF64, ArrayF64, ArrayF64, ArrayF64, ArrayF64]:
-    s, x, _, _ = dordvarmax(u, y, f, p, method="gradient", tol=1e-6, reg="none")
+    # MATLAB examples use the ELS path together with tikh/gcv.
+    # Only the no-regularization variant is currently ported, but ELS is closer
+    # to the intended MATLAB workflow than the gradient fallback.
+    s, x, _, _ = dordvarmax(u, y, f, p, method="els", tol=1e-6, reg="none")
     x_n = dmodx(x, n)
     return (s,) + dx2abcdk(x_n, u, y, f, p, c="none", return_k=True)
 
