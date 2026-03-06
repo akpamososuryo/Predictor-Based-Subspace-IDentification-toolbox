@@ -6,18 +6,13 @@ from _common import (
     estimate_varx_abcdk,
     print_case_summary,
     simulate_closed_loop,
-    simulate_lti,
-    snr_db,
     vaf_percent,
 )
+from control import matlab as ml
+from snr import snr_db
 
 
 def main() -> None:
-    print(
-        "[ex01-note] Python currently runs the ported no-regularization "
-        "dordvarx/dordvarmax path; MATLAB ex01 uses tikh/gcv regularization."
-    )
-
     a = np.array(
         [
             [0.67, 0.67, 0.0, 0.0],
@@ -43,11 +38,16 @@ def main() -> None:
 
     n_samples = 4000
     rng = np.random.default_rng(101)
+    t = np.arange(n_samples, dtype=np.float64)
     r = rng.standard_normal((n_samples, 2))
     e = rng.standard_normal((n_samples, 2))
 
-    y, _ = simulate_lti(a, b, c, d, r, k=k, e=e)
-    y0, _ = simulate_lti(a, b, c, d, r)
+    ol = ml.ss(a, np.hstack((b, k)), c, np.hstack((d, np.eye(c.shape[0]))), 1.0)
+    ol_nom = ml.ss(a, b, c, d, 1.0)
+    y, _, _ = ml.lsim(ol, np.hstack((r, e)), t)
+    y0, _, _ = ml.lsim(ol_nom, r, t)
+    y = np.asarray(y, dtype=np.float64)
+    y0 = np.asarray(y0, dtype=np.float64)
 
     n = 4
     f = 10
@@ -61,9 +61,11 @@ def main() -> None:
         varmax_ok = False
         print(f"[ex01-open-varmax] skipped due to numerical issue: {exc}")
 
-    yi, _ = simulate_lti(ai, bi, ci, di, r)
+    yi, _, _ = ml.lsim(ml.ss(ai, bi, ci, di, 1.0), r, t)
+    yi = np.asarray(yi, dtype=np.float64)
     if varmax_ok:
-        yv, _ = simulate_lti(av, bv, cv, dv, r)
+        yv, _, _ = ml.lsim(ml.ss(av, bv, cv, dv, 1.0), r, t)
+        yv = np.asarray(yv, dtype=np.float64)
 
     print_case_summary("ex01-open-varx", snr_db(y, y0), vaf_percent(y0, yi), ai)
     if varmax_ok:
@@ -80,9 +82,11 @@ def main() -> None:
         varmax_cl_ok = False
         print(f"[ex01-closed-varmax] skipped due to numerical issue: {exc}")
 
-    yi_cl, _ = simulate_lti(ai_cl, bi_cl, ci_cl, di_cl, u_cl)
+    yi_cl, _, _ = ml.lsim(ml.ss(ai_cl, bi_cl, ci_cl, di_cl, 1.0), u_cl, t)
+    yi_cl = np.asarray(yi_cl, dtype=np.float64)
     if varmax_cl_ok:
-        yv_cl, _ = simulate_lti(av_cl, bv_cl, cv_cl, dv_cl, u_cl)
+        yv_cl, _, _ = ml.lsim(ml.ss(av_cl, bv_cl, cv_cl, dv_cl, 1.0), u_cl, t)
+        yv_cl = np.asarray(yv_cl, dtype=np.float64)
 
     print_case_summary(
         "ex01-closed-varx", snr_db(y_cl, y0_cl), vaf_percent(y0_cl, yi_cl), ai_cl

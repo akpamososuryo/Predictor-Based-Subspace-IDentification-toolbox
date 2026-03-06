@@ -27,6 +27,25 @@ in the related documents if needed.
 - Python: `scipy.linalg.svd(A) → U, S, Vh` (note: Vh not V)
 - Always use `float64` explicitly
 
+### Control-System API Preference
+- For control-oriented example code, prefer direct `control` / `control.matlab` APIs
+	(`control.matlab.ss`, `control.matlab.feedback`, `control.matlab.lsim`,
+	`control.matlab.freqresp`, with direct `control.*` calls only where the matlab-style layer is not
+	a practical fit) over extra wrapper layers when practical.
+- The goal is to keep the Python example flow visually and behaviorally close to the MATLAB example
+	flow and reduce discrepancies introduced by custom abstraction layers.
+	new control abstraction.
+- If a helper is still needed, keep it as a thin MATLAB-to-`control.matlab` mapping rather than a
+	new control abstraction.
+
+### MATLAB File Port Structure
+- Port MATLAB functions into individual Python files by default instead of folding their logic into
+	shared helper modules.
+- If MATLAB has a standalone public file such as `snr.m`, the Python port should also live in its
+	own module (for example `snr.py`) and be imported where needed.
+- Reserve shared helper modules for genuinely Python-side glue code, not for housing direct ports of
+	separate MATLAB functions.
+
 ### Pseudoinverse for Regression
 - MATLAB `regress(Y, Z)` computes `Y @ pinv(Z)`
 - Use `np.linalg.pinv()` not `lstsq()` for direct equivalence
@@ -45,6 +64,19 @@ in the related documents if needed.
 	- Python parity test that runs against the fixture without skipping
 - If local MATLAB tooling is unavailable, keep parity tests with an explicit skip and generation command,
 	and track the fixture as a temporary gap.
+
+## Example Validation
+- For Python example ports, use the published MATLAB reference pages under `examples/html/` as a
+	comparison target in addition to the source `.m` files.
+- Compare both textual outputs and visuals where the HTML includes them, especially:
+	- singular-value plots,
+	- pole locations,
+	- Bode / frequency-response figures,
+	- printed SNR / VAF summaries.
+- Treat the HTML pages as the easiest review surface for checking whether the Python example results
+	still look like the MATLAB example after refactors.
+- When the MATLAB page is driven by unseeded random simulation, use the HTML as a structural and
+	visual reference rather than expecting exact numeric equality in the printed SNR / VAF values.
 
 ## Parity-First Lessons Learned
 - During parity phase, implement MATLAB behavior exactly before any cleanup or stabilization.

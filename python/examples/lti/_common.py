@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from typing import Any
 
 import numpy as np
+from control import matlab as ml
 from numpy.typing import NDArray
 
 PY_ROOT = Path(__file__).resolve().parents[2]
@@ -25,13 +27,101 @@ from pbsid.lti import (  # noqa: E402
 )
 
 ArrayF64 = NDArray[np.float64]
+StateSpace = Any
 
 
-def snr_db(y: ArrayF64, y_ref: ArrayF64) -> float:
-    num = float(np.sum(np.square(y_ref)))
-    den = float(np.sum(np.square(y - y_ref)))
-    den = max(den, 1e-12)
-    return 10.0 * np.log10(num / den)
+def _as_2d_float64(data: ArrayF64) -> ArrayF64:
+    arr = np.asarray(data, dtype=np.float64)
+    if arr.ndim == 1:
+        return arr.reshape(-1, 1)
+    if arr.ndim != 2:
+        raise ValueError(f"Expected a 1D or 2D array, received shape {arr.shape}.")
+    return arr
+
+
+def _samples_first(data: ArrayF64) -> ArrayF64:
+    arr = _as_2d_float64(data)
+    if arr.shape[1] > arr.shape[0]:
+        return arr.T
+    return arr
+
+
+def time_vector(n_samples: int, dt: float = 1.0) -> ArrayF64:
+    return np.arange(n_samples, dtype=np.float64) * dt
+
+
+def state_space_model(
+    a: ArrayF64,
+    b: ArrayF64,
+    c: ArrayF64,
+    d: ArrayF64,
+    dt: float = 1.0,
+) -> StateSpace:
+    return ml.ss(a, b, c, d, dt)
+
+
+def innovation_model(
+    a: ArrayF64,
+    b: ArrayF64,
+    c: ArrayF64,
+    d: ArrayF64,
+    k: ArrayF64,
+    dt: float = 1.0,
+) -> StateSpace:
+    l_out = c.shape[0]
+    return ml.ss(a, np.hstack((b, k)), c, np.hstack((d, np.eye(l_out))), dt)
+
+
+def feedback_model(plant: StateSpace, f_gain: ArrayF64) -> StateSpace:
+    controller = ml.ss([], [], [], np.asarray(f_gain, dtype=np.float64), plant.dt)
+    return ml.feedback(plant, controller, sign=-1)
+
+
+def simulate_system(
+    sys_model: StateSpace,
+    u: ArrayF64,
+    *,
+    dt: float | None = None,
+    x0: ArrayF64 | None = None,
+) -> tuple[ArrayF64, ArrayF64]:
+    u_2d = _as_2d_float64(u)
+    sample_time = float(sys_model.dt if dt is None else dt)
+    x0_use = (
+        np.zeros((sys_model.nstates,), dtype=np.float64)
+        if x0 is None
+        else x0.astype(np.float64)
+    )
+    y, _, x = ml.lsim(
+        sys_model,
+        U=u_2d,
+        T=time_vector(u_2d.shape[0], sample_time),
+        X0=x0_use,
+    )
+    y = np.asarray(y, dtype=np.float64)
+    x = np.asarray(x, dtype=np.float64)
+    if y.ndim == 1:
+        y = y.reshape(-1, 1)
+    if x.ndim == 1:
+        x = x.reshape(-1, 1)
+    return y, x
+
+
+def frequency_response(sys_model: StateSpace, w: ArrayF64) -> ArrayF64:
+    omega = np.asarray(w, dtype=np.float64)
+    mag, phase, _ = ml.freqresp(sys_model, omega)
+    mag_arr = np.asarray(mag, dtype=np.float64)
+    phase_arr = np.asarray(phase, dtype=np.float64)
+    response = mag_arr * np.exp(1j * phase_arr)
+    if response.ndim == 1:
+        response = response.reshape(1, 1, -1)
+    return response
+
+
+def format_metric(values: float | ArrayF64, precision: int = 2) -> str:
+    arr = np.asarray(values, dtype=np.float64)
+    if arr.ndim == 0:
+        return f"{float(arr):.{precision}f}"
+    return np.array2string(arr, precision=precision)
 
 
 def vaf_percent(y: ArrayF64, y_hat: ArrayF64) -> ArrayF64:
@@ -52,25 +142,19 @@ def simulate_lti(
     e: ArrayF64 | None = None,
     x0: ArrayF64 | None = None,
 ) -> tuple[ArrayF64, ArrayF64]:
-    n_samples = u.shape[0]
-    n = a.shape[0]
-    l_out = c.shape[0]
+    u_2d = _as_2d_float64(u)
+    if e is None and k is None:
+        return simulate_system(state_space_model(a, b, c, d), u_2d, x0=x0)
 
-    x = np.zeros((n,), dtype=np.float64) if x0 is None else x0.astype(np.float64).copy()
-    y = np.zeros((n_samples, l_out), dtype=np.float64)
-    x_hist = np.zeros((n_samples + 1, n), dtype=np.float64)
-    x_hist[0, :] = x
+    if k is None:
+        raise ValueError("Noise samples require an innovation matrix k for combined simulation.")
 
-    e_use = np.zeros((n_samples, l_out), dtype=np.float64) if e is None else e
-
-    for t in range(n_samples):
-        ut = u[t, :]
-        et = e_use[t, :]
-        y[t, :] = c @ x + d @ ut + et
-        x = a @ x + b @ ut if k is None else a @ x + b @ ut + k @ et
-        x_hist[t + 1, :] = x
-
-    return y, x_hist
+    e_2d = (
+        np.zeros((u_2d.shape[0], c.shape[0]), dtype=np.float64)
+        if e is None
+        else _as_2d_float64(e)
+    )
+    return simulate_system(innovation_model(a, b, c, d, k), np.hstack((u_2d, e_2d)), x0=x0)
 
 
 def simulate_closed_loop(
@@ -84,25 +168,28 @@ def simulate_closed_loop(
     *,
     e: ArrayF64 | None = None,
 ) -> tuple[ArrayF64, ArrayF64, ArrayF64]:
-    n_samples = r_ref.shape[0]
+    r_ref_2d = _as_2d_float64(r_ref)
+    n_samples = r_ref_2d.shape[0]
     r_in = b.shape[1]
     l_out = c.shape[0]
 
     y = np.zeros((n_samples, l_out), dtype=np.float64)
     u = np.zeros((n_samples, r_in), dtype=np.float64)
     x = np.zeros((a.shape[0],), dtype=np.float64)
-    e_use = np.zeros((n_samples, l_out), dtype=np.float64) if e is None else e
+    e_use = np.zeros((n_samples, l_out), dtype=np.float64) if e is None else _as_2d_float64(e)
 
     for t in range(n_samples):
-        u[t, :] = r_ref[t, :] - f_gain @ y[t - 1, :] if t > 0 else r_ref[t, :]
-        y[t, :] = c @ x + d @ u[t, :] + e_use[t, :]
+        # Match the MATLAB closed-loop example flow: compute the measured output first,
+        # then form the current control input u[k] = r[k] - F y[k].
+        y[t, :] = c @ x + e_use[t, :]
+        u[t, :] = r_ref_2d[t, :] - f_gain @ y[t, :]
         x = (
             a @ x + b @ u[t, :]
             if k_noise is None
             else a @ x + b @ u[t, :] + k_noise @ e_use[t, :]
         )
 
-    y_nom, _ = simulate_lti(a, b, c, d, u)
+    y_nom, _ = simulate_system(state_space_model(a, b, c, d), u)
     return u, y, y_nom
 
 
@@ -113,9 +200,7 @@ def estimate_varx_abcdk(
     f: int,
     p: int,
 ) -> tuple[ArrayF64, ArrayF64, ArrayF64, ArrayF64, ArrayF64, ArrayF64, ArrayF64, ArrayF64]:
-    # MATLAB ex01-ex09 typically use tikh/gcv regularization here.
-    # The current Python port only exposes the reg="none" path.
-    s, x, varx, u_proj, zps = dordvarx(u, y, f, p, reg="none", opt="gcv")
+    s, x, varx, u_proj, zps = dordvarx(u, y, f, p, reg="tikh", opt="gcv")
     x_n = dmodx(x, n)
     a, b, c, d, k = dx2abcdk(x_n, u, y, f, p, c="none", return_k=True)
     return s, a, b, c, d, k, varx, zps
@@ -127,11 +212,13 @@ def estimate_varmax_abcdk(
     n: int,
     f: int,
     p: int,
+    *,
+    method: str = "els",
+    tol: float = 1e-6,
+    reg: str = "tikh",
+    opt: str | float = "gcv",
 ) -> tuple[ArrayF64, ArrayF64, ArrayF64, ArrayF64, ArrayF64]:
-    # MATLAB examples use the ELS path together with tikh/gcv.
-    # Only the no-regularization variant is currently ported, but ELS is closer
-    # to the intended MATLAB workflow than the gradient fallback.
-    s, x, _, _ = dordvarmax(u, y, f, p, method="els", tol=1e-6, reg="none")
+    s, x, _, _ = dordvarmax(u, y, f, p, method=method, tol=tol, reg=reg, opt=opt)
     x_n = dmodx(x, n)
     return (s,) + dx2abcdk(x_n, u, y, f, p, c="none", return_k=True)
 
@@ -142,8 +229,11 @@ def estimate_fir_abcd(
     n: int,
     f: int,
     p: int,
+    *,
+    reg: str = "tikh",
+    opt: str | float = "gcv",
 ) -> tuple[ArrayF64, ArrayF64, ArrayF64, ArrayF64, ArrayF64]:
-    s, x, _ = dordfir(u, y, f, p, reg="none", opt="gcv")
+    s, x, _ = dordfir(u, y, f, p, reg=reg, opt=opt)
     x_n = dmodx(x, n)
     a, b, c, d = dx2abcd(x_n, u, y, f, p, c="none")
     return s, a, b, c, d
@@ -169,9 +259,9 @@ def stable_random_system(
     )
 
 
-def print_case_summary(name: str, snr: float, vaf_values: ArrayF64, a: ArrayF64) -> None:
+def print_case_summary(name: str, snr: ArrayF64, vaf_values: ArrayF64, a: ArrayF64) -> None:
     print(f"\n[{name}]")
-    print(f"SNR (dB): {snr:.2f}")
+    print(f"SNR (dB): {format_metric(snr)}")
     print(f"VAF (%): {np.array2string(vaf_values, precision=2)}")
     print(f"Estimated poles: {np.array2string(np.linalg.eigvals(a), precision=4)}")
 

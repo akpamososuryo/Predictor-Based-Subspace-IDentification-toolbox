@@ -1,7 +1,14 @@
 from __future__ import annotations
 
 import numpy as np
-from _common import estimate_varx_abcdk, simulate_lti, stable_random_system, vaf_percent
+from _common import (
+    estimate_varx_abcdk,
+    innovation_model,
+    simulate_system,
+    stable_random_system,
+    state_space_model,
+    vaf_percent,
+)
 
 
 def main() -> None:
@@ -12,6 +19,8 @@ def main() -> None:
     rng = np.random.default_rng(107)
     vaf_store = np.zeros((mcs, 3), dtype=np.float64)
     pole_store = np.zeros((mcs, a.shape[0]), dtype=np.complex128)
+    ol = innovation_model(a, b, c, d, k)
+    ol_nom = state_space_model(a, b, c, d)
 
     for i in range(mcs):
         u = np.column_stack(
@@ -20,11 +29,12 @@ def main() -> None:
                 1e3 * np.sign(rng.standard_normal(n_samples)),
             )
         ).astype(np.float64)
-        y, _ = simulate_lti(a, b, c, d, u, k=k, e=0.03 * rng.standard_normal((n_samples, 3)))
-        y_nom, _ = simulate_lti(a, b, c, d, u)
+        e_i = 0.03 * rng.standard_normal((n_samples, 3))
+        y, _ = simulate_system(ol, np.hstack((u, e_i)))
+        y_nom, _ = simulate_system(ol_nom, u)
 
         _, ai, bi, ci, di, _, _, _ = estimate_varx_abcdk(u, y, n=a.shape[0], f=20, p=50)
-        yi, _ = simulate_lti(ai, bi, ci, di, u)
+        yi, _ = simulate_system(state_space_model(ai, bi, ci, di), u)
 
         vaf_store[i, :] = vaf_percent(y_nom, yi)
         pole_store[i, :] = np.linalg.eigvals(ai)

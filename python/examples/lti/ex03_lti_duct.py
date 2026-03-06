@@ -5,10 +5,12 @@ from _common import (
     estimate_varmax_abcdk,
     estimate_varx_abcdk,
     print_case_summary,
-    snr_db,
+    simulate_system,
+    state_space_model,
     vaf_percent,
 )
 from scipy.signal import lfilter
+from snr import snr_db
 
 
 def main() -> None:
@@ -106,17 +108,12 @@ def main() -> None:
     y0_2 = y0.reshape(-1, 1)
 
     _, ai, bi, ci, di, _, _, _ = estimate_varx_abcdk(u2, y2, n, f, p)
-    _, av, bv, cv, dv, _ = estimate_varmax_abcdk(u2, y2, n, f, p)
+    _, av, bv, cv, dv, _ = estimate_varmax_abcdk(
+        u2, y2, n, f, p, method="gradient", tol=1e-4
+    )
 
-    yi = np.zeros_like(y0_2)
-    yv = np.zeros_like(y0_2)
-    x_i = np.zeros((n,), dtype=np.float64)
-    x_v = np.zeros((n,), dtype=np.float64)
-    for t in range(n_samples):
-        yi[t, 0] = ci @ x_i + di @ u2[t, :]
-        yv[t, 0] = cv @ x_v + dv @ u2[t, :]
-        x_i = ai @ x_i + bi @ u2[t, :]
-        x_v = av @ x_v + bv @ u2[t, :]
+    yi, _ = simulate_system(state_space_model(ai, bi, ci, di, ts), u2, dt=ts)
+    yv, _ = simulate_system(state_space_model(av, bv, cv, dv, ts), u2, dt=ts)
 
     print_case_summary("ex03-high-order-varx", snr_db(y2, y0_2), vaf_percent(y0_2, yi), ai)
     print_case_summary("ex03-high-order-varmax", snr_db(y2, y0_2), vaf_percent(y0_2, yv), av)

@@ -1,7 +1,14 @@
 from __future__ import annotations
 
 import numpy as np
-from _common import run_uncertainty_pipeline, simulate_lti, snr_db
+from _common import (
+    format_metric,
+    innovation_model,
+    run_uncertainty_pipeline,
+    simulate_system,
+    state_space_model,
+)
+from snr import snr_db
 
 
 def main() -> None:
@@ -33,11 +40,13 @@ def main() -> None:
     r = rng.standard_normal((n_samples, 2))
     e = rng.standard_normal((n_samples, 2))
 
-    y0, _ = simulate_lti(a, b, c, d, r)
-    y, _ = simulate_lti(a, b, c, d, r, k=k, e=e)
+    ol = innovation_model(a, b, c, d, k)
+    ol_nom = state_space_model(a, b, c, d)
+    y0, _ = simulate_system(ol_nom, r)
+    y, _ = simulate_system(ol, np.hstack((r, e)))
 
     print("[ex06-uncertainty]")
-    print(f"SNR (dB): {snr_db(y, y0):.2f}")
+    print(f"SNR (dB): {format_metric(snr_db(y, y0))}")
     _ = run_uncertainty_pipeline(r, y, n=4, f=10, p=10, h=1.0)
 
 

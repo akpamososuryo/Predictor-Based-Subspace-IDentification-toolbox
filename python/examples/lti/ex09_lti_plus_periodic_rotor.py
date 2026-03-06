@@ -3,7 +3,14 @@ from __future__ import annotations
 from pathlib import Path
 
 import numpy as np
-from _common import estimate_varx_abcdk, simulate_lti, stable_random_system, vaf_percent
+from _common import (
+    estimate_varx_abcdk,
+    innovation_model,
+    simulate_system,
+    stable_random_system,
+    state_space_model,
+    vaf_percent,
+)
 from scipy.io import loadmat
 
 
@@ -34,7 +41,8 @@ def _load_or_synthesize(case: str) -> tuple[np.ndarray, np.ndarray, float, float
             np.cos(2.0 * np.pi * rpm * t / 60.0),
         )
     )
-    y, _ = simulate_lti(a, b, c, d, u, k=k, e=0.03 * rng.standard_normal((n_samples, 2)))
+    ol = innovation_model(a, b, c, d, k, ts)
+    y, _ = simulate_system(ol, np.hstack((u, 0.03 * rng.standard_normal((n_samples, 2)))), dt=ts)
     y = y + 0.08 * periodic @ np.array([[1.0, 0.5], [-0.3, 0.9]], dtype=np.float64)
     return u, y, ts, rpm
 
@@ -60,8 +68,12 @@ def run_case(case: str) -> None:
     _, a_plain, b_plain, c_plain, d_plain, _, _, _ = estimate_varx_abcdk(u, y, n, f, p)
     _, a_aug, b_aug, c_aug, d_aug, _, _, _ = estimate_varx_abcdk(u_aug, y, n, f, p)
 
-    y_plain, _ = simulate_lti(a_plain, b_plain, c_plain, d_plain, u)
-    y_aug, _ = simulate_lti(a_aug, b_aug, c_aug, d_aug, u_aug)
+    y_plain, _ = simulate_system(
+        state_space_model(a_plain, b_plain, c_plain, d_plain, ts), u, dt=ts
+    )
+    y_aug, _ = simulate_system(
+        state_space_model(a_aug, b_aug, c_aug, d_aug, ts), u_aug, dt=ts
+    )
 
     print(f"\n[ex09-RPM-{int(rpm)}]")
     print(f"VAF plain (%): {np.array2string(vaf_percent(y, y_plain), precision=2)}")
